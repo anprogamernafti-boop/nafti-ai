@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nafti AI</title>
+
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0D7377">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nafti AI">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #F0EBE3;
+    --bg-secondary: #FEFCF9;
+    --bg-chat: #FFFFFF;
+    --text-primary: #1A1A2E;
+    --text-secondary: #5C5470;
+    --text-muted: #9490A0;
+    --accent: #0D7377;
+    --accent-light: #14A3A8;
+    --accent-glow: rgba(13, 115, 119, 0.15);
+    --gold: #D4A855;
+    --gold-light: #F0D48A;
+    --user-bubble: #0D7377;
+    --user-text: #FFFFFF;
+    --ai-bubble: #F7F4EF;
+    --ai-text: #1A1A2E;
+    --border: rgba(92, 84, 112, 0.1);
+    --shadow: 0 2px 20px rgba(26, 26, 46, 0.06);
+    --shadow-lg: 0 8px 40px rgba(26, 26, 46, 0.1);
+    --input-bg: #FFFFFF;
+    --input-border: rgba(92, 84, 112, 0.15);
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(92, 84, 112, 0.2);
+    --code-bg: #2D2B55;
+    --code-text: #F0D48A;
+    --error-bg: #FFF0F0;
+    --error-text: #D32F2F;
+    --pattern-opacity: 0.03;
+  }
+
+  html.dark {
+    --bg-primary: #0F0E17;
+    --bg-secondary: #161525;
+    --bg-chat: #1A1930;
+    --text-primary: #FFFFFE;
+    --text-secondary: #B8B5C8;
+    --text-muted: #6B6880;
+    --accent: #14D4D9;
+    --accent-light: #5EEAED;
+    --accent-glow: rgba(20, 212, 217, 0.12);
+    --gold: #F0D48A;
+    --gold-light: #F5E3B3;
+    --user-bubble: #14D4D9;
+    --user-text: #0F0E17;
+    --ai-bubble: #232240;
+    --ai-text: #E8E6F0;
+    --border: rgba(184, 181, 200, 0.08);
+    --shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.3);
+    --input-bg: #1E1D33;
+    --input-border: rgba(184, 181, 200, 0.12);
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(184, 181, 200, 0.15);
+    --code-bg: #0D0C1D;
+    --code-text: #F0D48A;
+    --error-bg: rgba(211, 47, 47, 0.1);
+    --error-text: #FF6B6B;
+    --pattern-opacity: 0.02;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 25%, var(--accent-glow) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(212, 168, 85, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: var(--pattern-opacity);
+    background-image:
+      linear-gradient(30deg, var(--text-primary) 12%, transparent 12.5%, transparent 87%, var(--text-primary) 87.5%, var(--text-primary)),
+      linear-gradient(150deg, var(--text-primary) 12%, transparent 12.5%, transparent 87%, var(--text-primary) 87.5%, var(--text-primary)),
+      linear-gradient(30deg, var(--text-primary) 12%, transparent 12.5%, transparent 87%, var(--text-primary) 87.5%, var(--text-primary)),
+      linear-gradient(150deg, var(--text-primary) 12%, transparent 12.5%, transparent 87%, var(--text-primary) 87.5%, var(--text-primary));
+    background-size: 80px 140px;
+    background-position: 0 0, 0 0, 40px 70px, 40px 70px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  .header {
+    position: relative;
+    z-index: 10;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .logo-container {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(13, 115, 119, 0.25);
+    animation: logoPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes logoPulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(13, 115, 119, 0.25); }
+    50% { box-shadow: 0 4px 24px rgba(13, 115, 119, 0.4); }
+  }
+
+  .logo-container i {
+    font-size: 20px;
+    color: #FFFFFF;
+  }
+
+  .header-info h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+
+  .header-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    background: #22C55E;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Chat Area */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    position: relative;
+    z-index: 1;
+    scroll-behavior: smooth;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 5px; }
+  .chat-area::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+
+  /* Welcome Screen */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 20px;
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .welcome-icon {
+    width: 90px;
+    height: 90px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    box-shadow: 0 12px 40px rgba(13, 115, 119, 0.3);
+    animation: float 4s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .welcome-icon i {
+    font-size: 40px;
+    color: #FFFFFF;
+  }
+
+  .welcome h2 {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .welcome p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    max-width: 320px;
+    line-height: 1.5;
+    margin-bottom: 28px;
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 440px;
+  }
+
+  .suggestion-chip {
+    background: var(--bg-chat);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    animation: chipIn 0.5s ease-out backwards;
+  }
+
+  .suggestion-chip:nth-child(1) { animation-delay: 0.2s; }
+  .suggestion-chip:nth-child(2) { animation-delay: 0.3s; }
+  .suggestion-chip:nth-child(3) { animation-delay: 0.4s; }
+  .suggestion-chip:nth-child(4) { animation-delay: 0.5s; }
+
+  @keyframes chipIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .suggestion-chip:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  .suggestion-chip .chip-icon {
+    margin-right: 6px;
+  }
+
+  /* Messages */
+  .message-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    animation: msgIn 0.35s ease-out;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message-group.user { align-items: flex-end; }
+  .message-group.ai { align-items: flex-start; }
+
+  .message-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    padding: 0 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .message-bubble {
+    max-width: 85%;
+    padding: 14px 18px;
+    border-radius: 20px;
+    line-height: 1.6;
+    font-size: 15px;
+    position: relative;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .message-group.user .message-bubble {
+    background: var(--user-bubble);
+    color: var(--user-text);
+    border-bottom-right-radius: 6px;
+    font-weight: 500;
+  }
+
+  .message-group.ai .message-bubble {
+    background: var(--ai-bubble);
+    color: var(--ai-text);
+    border-bottom-left-radius: 6px;
+    box-shadow: var(--shadow);
+  }
+
+  .message-group.ai .message-bubble.error-bubble {
+    background: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid var(--error-text);
+  }
+
+  /* Markdown styling inside AI bubbles */
+  .message-bubble p { margin-bottom: 10px; }
+  .message-bubble p:last-child { margin-bottom: 0; }
+  .message-bubble strong { font-weight: 700; }
+  .message-bubble em { font-style: italic; }
+
+  .message-bubble h1, .message-bubble h2, .message-bubble h3,
+  .message-bubble h4, .message-bubble h5, .message-bubble h6 {
+    margin: 16px 0 8px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .message-bubble h1 { font-size: 1.3em; }
+  .message-bubble h2 { font-size: 1.2em; }
+  .message-bubble h3 { font-size: 1.1em; }
+
+  .message-bubble ul, .message-bubble ol {
+    margin: 8px 0;
+    padding-left: 24px;
+  }
+  .message-bubble li { margin-bottom: 4px; }
+
+  .message-bubble code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 2px 7px;
+    border-radius: 5px;
+  }
+
+  .message-bubble pre {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .message-bubble pre code {
+    background: none;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--code-text);
+  }
+
+  .message-bubble blockquote {
+    border-left: 3px solid var(--gold);
+    padding-left: 14px;
+    margin: 10px 0;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .message-bubble a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .message-bubble table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+    font-size: 14px;
+  }
+
+  .message-bubble th, .message-bubble td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .message-bubble th {
+    background: var(--accent-glow);
+    font-weight: 700;
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex;
+    gap: 5px;
+    padding: 6px 0;
+  }
+
+  .typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-8px); opacity: 1; }
+  }
+
+  /* Input Area */
+  .input-area {
+    position: relative;
+    z-index: 10;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 24px;
+    padding: 6px 6px 6px 18px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+  }
+
+  #messageInput {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 16px;
+    color: var(--text-primary);
+    resize: none;
+    min-height: 24px;
+    max-height: 120px;
+    line-height: 1.5;
+    padding: 8px 0;
+  }
+
+  #messageInput::placeholder {
+    color: var(--text-muted);
+  }
+
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+    font-size: 16px;
+  }
+
+  .send-btn:hover:not(:disabled) {
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(13, 115, 119, 0.35);
+  }
+
+  .send-btn:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  .send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .powered-by {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  /* PWA Install Banner */
+  .install-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    padding: 14px 20px;
+    z-index: 1000;
+    animation: slideUp 0.4s ease-out;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .install-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .install-banner-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .install-banner-icon i { color: #fff; font-size: 20px; }
+
+  .install-banner-text {
+    flex: 1;
+  }
+
+  .install-banner-text strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+
+  .install-banner-text span {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .install-btn {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    color: #fff;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.2s ease;
+  }
+
+  .install-btn:hover { transform: scale(1.05); }
+
+  .install-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .header { padding: 12px 16px; }
+    .header-info h1 { font-size: 20px; }
+    .chat-area { padding: 16px 12px; }
+    .message-bubble { max-width: 90%; font-size: 14px; }
+    .welcome h2 { font-size: 22px; }
+    .welcome p { font-size: 14px; }
+    .suggestion-chip { font-size: 12px; padding: 8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo-container">
+    <i class="fa-solid fa-bolt"></i>
+  </div>
+  <div class="header-info">
+    <h1>Nafti AI</h1>
+    <p><span class="status-dot"></span>En ligne &middot; Pr&ecirc;t &agrave; r&eacute;pondre</p>
+  </div>
+</div>
+
+<!-- Chat Area -->
+<div class="chat-area" id="chatArea">
+  <div class="welcome" id="welcomeScreen">
+    <div class="welcome-icon">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+    </div>
+    <h2>Bienvenue sur Nafti AI</h2>
+    <p>Posez-moi n'importe quelle question et je ferai de mon mieux pour vous aider.</p>
+    <div class="suggestions">
+      <button class="suggestion-chip" onclick="useSuggestion(this)">
+        <span class="chip-icon"><i class="fa-solid fa-lightbulb"></i></span>Explique-moi la relativit&eacute;
+      </button>
+      <button class="suggestion-chip" onclick="useSuggestion(this)">
+        <span class="chip-icon"><i class="fa-solid fa-code"></i></span>&Eacute;cris du code Python
+      </button>
+      <button class="suggestion-chip" onclick="useSuggestion(this)">
+        <span class="chip-icon"><i class="fa-solid fa-globe"></i></span>Traduis en anglais
+      </button>
+      <button class="suggestion-chip" onclick="useSuggestion(this)">
+        <span class="chip-icon"><i class="fa-solid fa-pen-fancy"></i></span>R&eacute;dige un email pro
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Input Area -->
+<div class="input-area">
+  <div class="input-wrapper">
+    <textarea
+      id="messageInput"
+      placeholder="Posez votre question..."
+      rows="1"
+      autocomplete="off"
+    ></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
+  </div>
+  <div class="powered-by">Propuls&eacute; par l'intelligence artificielle</div>
+</div>
+
+<!-- PWA Install Banner -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-content">
+    <div class="install-banner-icon">
+      <i class="fa-solid fa-bolt"></i>
+    </div>
+    <div class="install-banner-text">
+      <strong>Installer Nafti AI</strong>
+      <span>Ajoutez l'app sur votre t&eacute;l&eacute;phone</span>
+    </div>
+    <button class="install-btn" id="installBtn">Installer</button>
+    <button class="install-close" id="installClose">&times;</button>
+  </div>
+</div>
+
+<script>
+  // === PWA : Service Worker & Install Prompt ===
+  (function() {
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(function(reg) { console.log('Service Worker registered', reg.scope); })
+        .catch(function(err) { console.log('SW registration failed', err); });
+    }
+
+    // Capture the install prompt
+    var deferredPrompt = null;
+    var installBanner = document.getElementById('installBanner');
+    var installBtn = document.getElementById('installBtn');
+    var installClose = document.getElementById('installClose');
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      // Show install banner (only if not dismissed before)
+      if (!localStorage.getItem || !localStorage.getItem('nafti-install-dismissed')) {
+        installBanner.style.display = 'block';
+      }
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', function() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function(result) {
+            deferredPrompt = null;
+            installBanner.style.display = 'none';
+          });
+        }
+      });
+    }
+
+    if (installClose) {
+      installClose.addEventListener('click', function() {
+        installBanner.style.display = 'none';
+        try { localStorage.setItem('nafti-install-dismissed', '1'); } catch(e) {}
+      });
+    }
+
+    // Hide banner if app is already installed (standalone mode)
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      if (installBanner) installBanner.style.display = 'none';
+    }
+  })();
+</script>
+
+<script>
+  (function() {
+    // Dark mode detection
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(event) {
+      if (event.matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    });
+
+    // Configure marked safely
+    if (typeof marked !== 'undefined') {
+      marked.setOptions({ breaks: true, gfm: true });
+    }
+
+    function parseMarkdown(text) {
+      if (typeof marked !== 'undefined' && marked.parse) {
+        return marked.parse(text);
+      }
+      return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
+    }
+
+    var chatArea = document.getElementById('chatArea');
+    var messageInput = document.getElementById('messageInput');
+    var sendBtn = document.getElementById('sendBtn');
+    var welcomeScreen = document.getElementById('welcomeScreen');
+
+    var isGenerating = false;
+    var currentAIBubble = null;
+
+    // Historique au format chat completions (tableau de messages)
+    var conversationHistory = [];
+
+    // Le proxy local gere la cle API -- aucune cle dans le frontend !
+    var AI_ENDPOINT = '/api/ai';
+
+    // Instruction systeme pour Nafti AI
+    var SYSTEM_MESSAGE = {
+      role: 'system',
+      content: 'Tu es Nafti AI, un assistant intelligent et bienveillant. ' +
+        'Reponds toujours en francais sauf si l\'utilisateur te parle dans une autre langue. ' +
+        'Sois concis, utile et amical. Utilise le format Markdown pour structurer tes reponses quand c\'est approprie. ' +
+        'Lorsque l\'utilisateur exprime un besoin, adresse-toi directement a ce besoin et, si necessaire, ' +
+        'pose une question clarificatrice avant de repondre. Priorise l\'utilite et la precision.'
+    };
+
+    // Appel au proxy local qui relaie vers Groq
+    async function callAI(messages) {
+      var res;
+      try {
+        res = await fetch(AI_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: messages })
+        });
+      } catch (networkErr) {
+        throw new Error('Erreur reseau : ' + networkErr.message + '. Verifiez que le serveur est lance (python server.py).');
+      }
+
+      if (!res.ok) {
+        var txt = await res.text().catch(function() { return ''; });
+        throw new Error('Erreur serveur (' + res.status + '): ' + txt);
+      }
+
+      var data = await res.json().catch(function() { return {}; });
+      if (data.error) {
+        var errMsg = (typeof data.error === 'string') ? data.error : (data.error.message || 'Erreur API');
+        throw new Error(errMsg);
+      }
+
+      // Format OpenAI chat completions (utilise par Groq)
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        return data.choices[0].message.content.trim();
+      }
+
+      throw new Error('Reponse inattendue du serveur.');
+    }
+
+    // Auto-resize textarea
+    messageInput.addEventListener('input', function() {
+      messageInput.style.height = 'auto';
+      messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+    });
+
+    // Enter to send
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Expose useSuggestion globally for onclick handlers
+    window.useSuggestion = function(chip) {
+      var text = Array.from(chip.childNodes)
+        .filter(function(node) { return node.nodeType === Node.TEXT_NODE; })
+        .map(function(node) { return node.textContent.trim(); })
+        .join('')
+        .trim();
+      messageInput.value = text;
+      messageInput.dispatchEvent(new Event('input'));
+      sendMessage();
+    };
+
+    function scrollToBottom() {
+      requestAnimationFrame(function() {
+        chatArea.scrollTop = chatArea.scrollHeight;
+      });
+    }
+
+    function hideWelcome() {
+      if (welcomeScreen) {
+        welcomeScreen.style.display = 'none';
+      }
+    }
+
+    function addUserMessage(text) {
+      hideWelcome();
+      var group = document.createElement('div');
+      group.className = 'message-group user';
+
+      var label = document.createElement('div');
+      label.className = 'message-label';
+      label.textContent = 'Vous';
+
+      var bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.textContent = text;
+
+      group.appendChild(label);
+      group.appendChild(bubble);
+      chatArea.appendChild(group);
+      scrollToBottom();
+    }
+
+    function addAIMessage() {
+      var group = document.createElement('div');
+      group.className = 'message-group ai';
+
+      var label = document.createElement('div');
+      label.className = 'message-label';
+      label.textContent = 'Nafti AI';
+
+      var bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+
+      var typing = document.createElement('div');
+      typing.className = 'typing-indicator';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+      bubble.appendChild(typing);
+
+      group.appendChild(label);
+      group.appendChild(bubble);
+      chatArea.appendChild(group);
+      scrollToBottom();
+
+      return bubble;
+    }
+
+    function showError(bubble, errorText) {
+      bubble.classList.add('error-bubble');
+      bubble.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + errorText;
+      scrollToBottom();
+    }
+
+    function finishGeneration() {
+      isGenerating = false;
+      currentAIBubble = null;
+      sendBtn.disabled = false;
+      messageInput.focus();
+    }
+
+    async function sendMessage() {
+      var text = messageInput.value.trim();
+      if (!text || isGenerating) return;
+
+      isGenerating = true;
+      sendBtn.disabled = true;
+
+      addUserMessage(text);
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+
+      // Ajouter le message utilisateur a l'historique
+      conversationHistory.push({ role: 'user', content: text });
+
+      // Construire le tableau messages complet (system + historique)
+      var messages = [SYSTEM_MESSAGE].concat(conversationHistory);
+
+      currentAIBubble = addAIMessage();
+
+      try {
+        var aiText = await callAI(messages);
+        if (currentAIBubble) {
+          currentAIBubble.innerHTML = parseMarkdown(aiText);
+          conversationHistory.push({ role: 'assistant', content: aiText });
+        }
+        finishGeneration();
+        scrollToBottom();
+      } catch (err) {
+        console.error('AI call failed', err);
+        if (currentAIBubble) {
+          showError(currentAIBubble, err.message || 'Impossible de contacter le service IA.');
+        }
+        // Retirer le dernier message user si echec (pour pouvoir reessayer)
+        conversationHistory.pop();
+        finishGeneration();
+      }
+    }
+
+    // Expose sendMessage globally for onclick handler
+    window.sendMessage = sendMessage;
+  })();
+</script>
+
+</body>
+</html>

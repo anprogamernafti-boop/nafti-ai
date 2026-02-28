@@ -1,0 +1,25 @@
+{
+  "name": "Nafti AI - Assistant Intelligent",
+  "short_name": "Nafti AI",
+  "description": "Assistant intelligent propulsé par l'intelligence artificielle",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F0EBE3",
+  "theme_color": "#0D7377",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
