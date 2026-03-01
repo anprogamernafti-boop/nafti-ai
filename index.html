@@ -549,7 +549,163 @@
     letter-spacing: 0.3px;
   }
 
-  /* PWA Install Banner */
+  /* Header Install Button */
+  .header-install-btn {
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 2px solid var(--accent);
+    background: var(--accent-glow);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+    animation: pulseInstall 2s ease-in-out infinite;
+  }
+
+  .header-install-btn:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  @keyframes pulseInstall {
+    0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+    50% { box-shadow: 0 0 0 8px transparent; }
+  }
+
+  .header-install-btn.hidden { display: none; }
+
+  /* Install Modal Overlay */
+  .install-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .install-modal-overlay.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .install-modal {
+    background: var(--bg-secondary);
+    border-radius: 24px;
+    padding: 28px 24px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    animation: modalSlideUp 0.3s ease-out;
+    text-align: center;
+  }
+
+  @keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .install-modal-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .install-modal-icon i { color: #fff; font-size: 28px; }
+
+  .install-modal h3 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .install-modal p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .install-modal .auto-install-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    color: #fff;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: transform 0.2s ease;
+  }
+
+  .install-modal .auto-install-btn:hover { transform: scale(1.03); }
+
+  .install-modal .manual-steps {
+    text-align: left;
+    background: var(--bg-primary);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .install-modal .manual-steps .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  .install-modal .manual-steps .step:last-child { margin-bottom: 0; }
+
+  .install-modal .manual-steps .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .install-modal .close-modal-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    padding: 8px 16px;
+  }
+
+  .install-modal .close-modal-btn:hover { color: var(--text-primary); }
+
+  /* PWA Install Banner (bottom, auto) */
   .install-banner {
     display: none;
     position: fixed;
@@ -590,9 +746,7 @@
 
   .install-banner-icon i { color: #fff; font-size: 20px; }
 
-  .install-banner-text {
-    flex: 1;
-  }
+  .install-banner-text { flex: 1; }
 
   .install-banner-text strong {
     display: block;
@@ -653,6 +807,38 @@
   <div class="header-info">
     <h1>Nafti AI</h1>
     <p><span class="status-dot"></span>En ligne &middot; Pr&ecirc;t &agrave; r&eacute;pondre</p>
+  </div>
+  <button class="header-install-btn" id="headerInstallBtn" title="Installer l'application">
+    <i class="fa-solid fa-download"></i>
+  </button>
+</div>
+
+<!-- Install Modal -->
+<div class="install-modal-overlay" id="installModalOverlay">
+  <div class="install-modal">
+    <div class="install-modal-icon">
+      <i class="fa-solid fa-download"></i>
+    </div>
+    <h3>Installer Nafti AI</h3>
+    <p>Ajoutez l'application sur votre &eacute;cran d'accueil pour un acc&egrave;s rapide !</p>
+    <button class="auto-install-btn" id="autoInstallBtn" style="display:none;">
+      <i class="fa-solid fa-download"></i>&nbsp; Installer maintenant
+    </button>
+    <div class="manual-steps" id="manualSteps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <span>Appuyez sur le menu <strong>&#8942;</strong> (3 points) en haut &agrave; droite de Chrome</span>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <span>Appuyez sur <strong>&laquo; Installer l'application &raquo;</strong> ou <strong>&laquo; Ajouter &agrave; l'&eacute;cran d'accueil &raquo;</strong></span>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <span>Confirmez en appuyant sur <strong>Installer</strong> — c'est fait !</span>
+      </div>
+    </div>
+    <button class="close-modal-btn" id="closeModalBtn">Fermer</button>
   </div>
 </div>
 
@@ -722,44 +908,107 @@
         .catch(function(err) { console.log('SW registration failed', err); });
     }
 
-    // Capture the install prompt
     var deferredPrompt = null;
+    var isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    // Elements
+    var headerInstallBtn = document.getElementById('headerInstallBtn');
+    var installModalOverlay = document.getElementById('installModalOverlay');
+    var autoInstallBtn = document.getElementById('autoInstallBtn');
+    var manualSteps = document.getElementById('manualSteps');
+    var closeModalBtn = document.getElementById('closeModalBtn');
     var installBanner = document.getElementById('installBanner');
     var installBtn = document.getElementById('installBtn');
     var installClose = document.getElementById('installClose');
 
+    // Hide install button if already installed as PWA
+    if (isInstalled && headerInstallBtn) {
+      headerInstallBtn.classList.add('hidden');
+    }
+
+    // Capture the browser's install prompt
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
-      // Show install banner (only if not dismissed before)
-      if (!localStorage.getItem || !localStorage.getItem('nafti-install-dismissed')) {
-        installBanner.style.display = 'block';
+
+      // Update modal: show auto-install button, hide manual steps
+      if (autoInstallBtn) autoInstallBtn.style.display = 'block';
+      if (manualSteps) manualSteps.style.display = 'none';
+
+      // Also show bottom banner
+      if (installBanner) {
+        try {
+          if (!localStorage.getItem('nafti-install-dismissed')) {
+            installBanner.style.display = 'block';
+          }
+        } catch(ex) {
+          installBanner.style.display = 'block';
+        }
       }
     });
 
-    if (installBtn) {
-      installBtn.addEventListener('click', function() {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then(function(result) {
-            deferredPrompt = null;
-            installBanner.style.display = 'none';
-          });
+    // Trigger install from any button
+    function triggerInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(result) {
+          if (result.outcome === 'accepted') {
+            if (headerInstallBtn) headerInstallBtn.classList.add('hidden');
+          }
+          deferredPrompt = null;
+          if (installBanner) installBanner.style.display = 'none';
+          if (installModalOverlay) installModalOverlay.classList.remove('active');
+        });
+      }
+    }
+
+    // Header button -> open modal
+    if (headerInstallBtn) {
+      headerInstallBtn.addEventListener('click', function() {
+        if (installModalOverlay) installModalOverlay.classList.add('active');
+      });
+    }
+
+    // Auto-install button in modal
+    if (autoInstallBtn) {
+      autoInstallBtn.addEventListener('click', triggerInstall);
+    }
+
+    // Close modal
+    if (closeModalBtn) {
+      closeModalBtn.addEventListener('click', function() {
+        if (installModalOverlay) installModalOverlay.classList.remove('active');
+      });
+    }
+
+    // Close modal when clicking overlay background
+    if (installModalOverlay) {
+      installModalOverlay.addEventListener('click', function(e) {
+        if (e.target === installModalOverlay) {
+          installModalOverlay.classList.remove('active');
         }
       });
     }
 
+    // Bottom banner buttons
+    if (installBtn) {
+      installBtn.addEventListener('click', triggerInstall);
+    }
+
     if (installClose) {
       installClose.addEventListener('click', function() {
-        installBanner.style.display = 'none';
+        if (installBanner) installBanner.style.display = 'none';
         try { localStorage.setItem('nafti-install-dismissed', '1'); } catch(e) {}
       });
     }
 
-    // Hide banner if app is already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+    // Hide install UI after app is installed
+    window.addEventListener('appinstalled', function() {
+      if (headerInstallBtn) headerInstallBtn.classList.add('hidden');
       if (installBanner) installBanner.style.display = 'none';
-    }
+      if (installModalOverlay) installModalOverlay.classList.remove('active');
+      deferredPrompt = null;
+    });
   })();
 </script>
 
