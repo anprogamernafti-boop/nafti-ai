@@ -1038,41 +1038,31 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
   (function() {
     var introOverlay = document.getElementById('introOverlay');
     var startBtn = document.getElementById('startBtn');
-    
-    // Check if intro was already shown
+
     function showIntro() {
-      if (introOverlay) {
-        introOverlay.classList.remove('hidden');
-      }
+      if (introOverlay) introOverlay.classList.remove('hidden');
     }
-    
+
     function hideIntro() {
-      if (introOverlay) {
-        introOverlay.classList.add('hidden');
-      }
-      try { localStorage.setItem('nafti-intro-shown', '1'); } catch(e) {}
+      if (introOverlay) introOverlay.classList.add('hidden');
     }
-    
-    // Show intro on first visit
-    try {
-      if (!localStorage.getItem('nafti-intro-shown')) {
-        showIntro();
-      } else {
-        hideIntro();
-      }
-    } catch(e) {
-      showIntro();
-    }
-    
-    // Start button listener
+
+    // Always show intro on every app open
+    showIntro();
+
+    // Start button listener: hide intro and reveal home screen only when CTA pressed
     if (startBtn) {
-      startBtn.addEventListener('click', hideIntro);
-    }
-    
-    // Click outside to close (optional)
-    if (introOverlay) {
-      introOverlay.addEventListener('click', function(e) {
-        if (e.target === introOverlay) hideIntro();
+      startBtn.addEventListener('click', function() {
+        hideIntro();
+        try {
+          var welcome = document.getElementById('welcomeScreen');
+          if (welcome) {
+            welcome.style.display = '';
+            welcome.style.animation = 'fadeUp .5s cubic-bezier(.22,1,.36,1)';
+          }
+          var messageInput = document.getElementById('messageInput');
+          if (messageInput) messageInput.focus();
+        } catch (e) {}
       });
     }
   })();
