@@ -1,25 +1,124 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file, send_from_directory, redirect, url_for, render_template, flash, session
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
 import os
+import json
+import hashlib
+from pathlib import Path
+from flask_dance.contrib.google import make_google_blueprint, google
 
 # Charger les variables d'environnement depuis .env
 load_dotenv()
 
 app = Flask(__name__, static_folder="static")
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'supersecret')
+app.config['SESSION_TYPE'] = 'filesystem'
 CORS(app)
+
+# File-based user storage
+USERS_FILE = Path('users.json')
+
+def load_users():
+    """Load users from JSON file"""
+    if USERS_FILE.exists():
+        with open(USERS_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_users(users):
+    """Save users to JSON file"""
+    with open(USERS_FILE, 'w') as f:
+        json.dump(users, f)
+
+def hash_password(password):
+    """Hash password using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(password, password_hash):
+    """Verify password against hash"""
+    return hash_password(password) == password_hash
 
 # Configuration Groq (lue depuis .env)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
+# Google OAuth blueprint
+google_bp = make_google_blueprint(
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    scope=["profile", "email"],
+    redirect_url="/google_callback"
+)
+app.register_blueprint(google_bp, url_prefix="/login")
 
+# --- routes ---
 @app.route("/")
 def index():
-    """Sert la page index.html"""
-    return send_file("index.html")
+    """Render the main template; template checks session['user']"""
+    return render_template('index.html')
+
+@app.route('/register', methods=['POST'])
+def register():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    if not email or not password:
+        flash("Email et mot de passe requis")
+        return redirect(url_for('index'))
+    
+    users = load_users()
+    if email in users:
+        flash("Email déjà utilisé")
+        return redirect(url_for('index'))
+    
+    users[email] = {
+        'password_hash': hash_password(password),
+        'google_id': None
+    }
+    save_users(users)
+    session['user'] = email
+    return redirect(url_for('index'))
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    users = load_users()
+    
+    if email not in users or not verify_password(password, users[email]['password_hash']):
+        flash("Identifiants invalides")
+        return redirect(url_for('index'))
+    
+    session['user'] = email
+    return redirect(url_for('index'))
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('index'))
+
+@app.route('/google_callback')
+def google_callback():
+    if not google.authorized:
+        return redirect(url_for('google.login'))
+    resp = google.get('/oauth2/v2/userinfo')
+    if not resp.ok:
+        return "Erreur Google OAuth", 500
+    info = resp.json()
+    email = info.get('email')
+    
+    # Auto-login or create user with Google
+    users = load_users()
+    if email not in users:
+        users[email] = {
+            'password_hash': None,  # No password for Google users
+            'google_id': info.get('id')
+        }
+        save_users(users)
+    
+    session['user'] = email
+    return redirect(url_for('index'))
 
 
 @app.route("/service-worker.js")
@@ -30,7 +129,9 @@ def service_worker():
 
 @app.route("/api/ai", methods=["POST"])
 def proxy_ai():
-    """Proxy qui relaie les requêtes vers l'API Groq"""
+    """Proxy that relays requests to Groq API - requires user to be logged in via session"""
+    if 'user' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
     if not GROQ_API_KEY:
         return jsonify({"error": "Clé API Groq manquante. Vérifiez votre fichier .env"}), 500
 
@@ -80,5 +181,6 @@ if __name__ == "__main__":
     print(f"  📍 http://localhost:5000")
     print(f"  🤖 Modèle: {GROQ_MODEL}")
     print(f"  🔑 Clé API: {'✅ configurée' if GROQ_API_KEY else '❌ MANQUANTE'}")
+    print(f"  📁 Utilisateurs: {USERS_FILE} (auto-créé)")
     print("=" * 50)
     app.run(debug=True, port=5000)
