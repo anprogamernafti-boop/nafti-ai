@@ -263,9 +263,60 @@ margin-bottom: 6px;
 .welcome p {
 color: var(--text-secondary);
 font-size: 14px;
-max-width: 300px;
+max-width: 380px;
 line-height: 1.55;
 margin-bottom: 24px;
+}
+
+.welcome-subtitle {
+color: var(--accent);
+font-size: 13px;
+font-weight: 600;
+letter-spacing: 0.5px;
+text-transform: uppercase;
+margin-bottom: 12px;
+}
+
+.welcome-features {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 14px;
+max-width: 340px;
+width: 100%;
+margin-bottom: 28px;
+}
+
+.feature-item {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 12px 14px;
+background: var(--accent-glow);
+border-radius: var(--radius-md);
+font-size: 12px;
+font-weight: 600;
+color: var(--text-primary);
+}
+
+.feature-icon {
+font-size: 18px;
+flex-shrink: 0;
+}
+
+.feature-text {
+line-height: 1.4;
+}
+
+.welcome-cta {
+margin-bottom: 20px;
+}
+
+.welcome-cta h3 {
+font-size: 13px;
+font-weight: 700;
+color: var(--text-muted);
+letter-spacing: 0.3px;
+text-transform: uppercase;
 }
 
 .suggestions {
@@ -694,6 +745,141 @@ font-size: 20px; cursor: pointer;
 padding: 4px; line-height: 1;
 }
 
+/* ── Intro Splash Screen ── */
+.intro-overlay {
+display: flex;
+position: fixed;
+inset: 0;
+background: var(--bg-primary);
+z-index: 3000;
+align-items: center;
+justify-content: center;
+padding: 20px;
+animation: fadeIn .4s ease-out;
+}
+
+.intro-overlay.hidden { display: none; }
+
+.intro-container {
+max-width: 540px;
+width: 100%;
+text-align: center;
+animation: slideUpIntro .5s cubic-bezier(.4,.0,.2,1);
+}
+
+@keyframes slideUpIntro {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.intro-icon {
+width: 80px; height: 80px;
+border-radius: 20px;
+background: linear-gradient(135deg, var(--accent), var(--accent-light));
+display: flex;
+align-items: center;
+justify-content: center;
+margin: 0 auto 32px;
+box-shadow: 0 12px 28px rgba(10,143,148,0.15);
+}
+
+.intro-icon i { font-size: 40px; color: #FFF; }
+
+.intro-title {
+font-size: 36px;
+font-weight: 800;
+letter-spacing: -0.8px;
+margin-bottom: 8px;
+color: var(--text-primary);
+}
+
+.intro-tagline {
+font-size: 13px;
+color: var(--accent);
+font-weight: 600;
+letter-spacing: 0.4px;
+text-transform: uppercase;
+margin-bottom: 20px;
+}
+
+.intro-description {
+font-size: 15px;
+line-height: 1.65;
+color: var(--text-secondary);
+margin-bottom: 40px;
+}
+
+.intro-features {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 14px;
+margin-bottom: 36px;
+}
+
+.intro-feature {
+padding: 18px 16px;
+background: rgba(10,143,148,.04);
+border: 1px solid rgba(10,143,148,.08);
+border-radius: var(--radius-lg);
+transition: all .3s ease;
+}
+
+.intro-feature:hover {
+background: rgba(10,143,148,.08);
+border-color: rgba(10,143,148,.12);
+}
+
+.intro-feature-icon {
+font-size: 24px;
+margin-bottom: 10px;
+}
+
+.intro-feature-text {
+font-size: 12px;
+font-weight: 600;
+color: var(--text-primary);
+letter-spacing: 0.2px;
+}
+
+.intro-cta-btn {
+width: 100%;
+padding: 14px 24px;
+border-radius: var(--radius-lg);
+border: 2px solid var(--accent);
+background: var(--accent);
+color: #fff;
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+font-size: 15px;
+cursor: pointer;
+transition: all .25s ease;
+box-shadow: 0 4px 12px rgba(10,143,148,0.15);
+letter-spacing: 0.3px;
+}
+
+.intro-cta-btn:hover {
+background: var(--accent-light);
+border-color: var(--accent-light);
+box-shadow: 0 6px 16px rgba(10,143,148,0.2);
+}
+
+.intro-cta-btn:active { transform: scale(.96); }
+
+/* ── Responsive Intro ── */
+@media (max-width: 480px) {
+.intro-container { padding: 0 16px; }
+.intro-title { font-size: 28px; margin-bottom: 6px; }
+.intro-tagline { margin-bottom: 16px; }
+.intro-description { font-size: 13px; margin-bottom: 32px; line-height: 1.6; }
+.intro-features { grid-template-columns: 1fr; gap: 12px; margin-bottom: 28px; }
+.intro-feature { padding: 14px 12px; }
+.intro-feature-icon { font-size: 20px; margin-bottom: 8px; }
+.intro-feature-text { font-size: 11px; }
+.intro-icon { width: 72px; height: 72px; margin-bottom: 24px; }
+.intro-icon i { font-size: 36px; }
+.intro-cta-btn { padding: 12px 20px; font-size: 14px; }
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
 .header { padding: 10px 14px; }
@@ -701,7 +887,11 @@ padding: 4px; line-height: 1;
 .chat-area { padding: 14px 10px; }
 .message-bubble { max-width: 90%; font-size: 14px; }
 .welcome h2 { font-size: 21px; }
-.welcome p { font-size: 13px; }
+.welcome p { font-size: 13px; max-width: 280px; }
+.welcome-subtitle { font-size: 12px; margin-bottom: 10px; }
+.welcome-features { grid-template-columns: 1fr; gap: 10px; max-width: 280px; margin-bottom: 20px; }
+.feature-item { font-size: 11px; padding: 10px 12px; }
+.feature-icon { font-size: 16px; }
 .suggestions { gap: 6px; }
 .suggestion-chip { font-size: 12px; padding: 10px 12px; }
 .chip-icon { width: 26px; height: 26px; font-size: 11px; }
@@ -761,6 +951,37 @@ padding: 4px; line-height: 1;
 </div>
 </div>
 
+<!-- Intro Splash Screen -->
+<div class="intro-overlay" id="introOverlay">
+<div class="intro-container">
+<div class="intro-icon">
+<i class="fa-solid fa-bolt"></i>
+</div>
+<h1 class="intro-title">Nafti AI</h1>
+<div class="intro-tagline">Assistant IA Intelligent</div>
+<p class="intro-description">Accédez à une intelligence artificielle professionnelle conçue pour améliorer votre productivité. Réponses précises, rapides et adaptées à votre contexte.</p>
+<div class="intro-features">
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-brain"></i></div>
+<div class="intro-feature-text">Intelligence avancée</div>
+</div>
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-bolt"></i></div>
+<div class="intro-feature-text">Réponses instantanées</div>
+</div>
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-shield"></i></div>
+<div class="intro-feature-text">Données sécurisées</div>
+</div>
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-sliders"></i></div>
+<div class="intro-feature-text">Hautement personnalisée</div>
+</div>
+</div>
+<button class="intro-cta-btn" id="startBtn">Accéder à Nafti AI</button>
+</div>
+</div>
+
 <!-- Chat Area -->
 <div class="chat-area" id="chatArea">
 <div class="welcome" id="welcomeScreen">
@@ -771,16 +992,16 @@ padding: 4px; line-height: 1;
 <p>Posez-moi n'importe quelle question et je ferai de mon mieux pour vous aider.</p>
 <div class="suggestions">
 <button class="suggestion-chip" onclick="useSuggestion(this)">
-<span class="chip-icon"><i class="fa-solid fa-lightbulb"></i></span>Explique-moi la relativit&eacute;
+<span class="chip-icon"><i class="fa-solid fa-lightbulb"></i></span>Explique-moi un concept
 </button>
 <button class="suggestion-chip" onclick="useSuggestion(this)">
-<span class="chip-icon"><i class="fa-solid fa-code"></i></span>&Eacute;cris du code Python
+<span class="chip-icon"><i class="fa-solid fa-code"></i></span>&Eacute;cris du code
 </button>
 <button class="suggestion-chip" onclick="useSuggestion(this)">
-<span class="chip-icon"><i class="fa-solid fa-globe"></i></span>Traduis en anglais
+<span class="chip-icon"><i class="fa-solid fa-pen-fancy"></i></span>Cr&eacute;ativit&eacute; & contenu
 </button>
 <button class="suggestion-chip" onclick="useSuggestion(this)">
-<span class="chip-icon"><i class="fa-solid fa-pen-fancy"></i></span>R&eacute;dige un email pro
+<span class="chip-icon"><i class="fa-solid fa-rocket"></i></span>Questions pratiques
 </button>
 </div>
 </div>
@@ -811,6 +1032,51 @@ padding: 4px; line-height: 1;
 <button class="install-close" id="installClose">&times;</button>
 </div>
 </div>
+
+<script>
+  // === Intro Splash Screen ===
+  (function() {
+    var introOverlay = document.getElementById('introOverlay');
+    var startBtn = document.getElementById('startBtn');
+    
+    // Check if intro was already shown
+    function showIntro() {
+      if (introOverlay) {
+        introOverlay.classList.remove('hidden');
+      }
+    }
+    
+    function hideIntro() {
+      if (introOverlay) {
+        introOverlay.classList.add('hidden');
+      }
+      try { localStorage.setItem('nafti-intro-shown', '1'); } catch(e) {}
+    }
+    
+    // Show intro on first visit
+    try {
+      if (!localStorage.getItem('nafti-intro-shown')) {
+        showIntro();
+      } else {
+        hideIntro();
+      }
+    } catch(e) {
+      showIntro();
+    }
+    
+    // Start button listener
+    if (startBtn) {
+      startBtn.addEventListener('click', hideIntro);
+    }
+    
+    // Click outside to close (optional)
+    if (introOverlay) {
+      introOverlay.addEventListener('click', function(e) {
+        if (e.target === introOverlay) hideIntro();
+      });
+    }
+  })();
+</script>
 
 <script>
 // === PWA : Service Worker & Install Prompt ===
