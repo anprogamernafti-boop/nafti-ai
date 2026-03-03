@@ -1,6 +1,6 @@
-flask
-flask-cors
-requests
-python-dotenv
-gunicorn
-flask-dance[google]
+flask==3.1.0
+flask-cors==5.0.1
+requests==2.32.3
+python-dotenv==1.0.1
+gunicorn==23.0.0
+flask-dance[google]==7.1.0
