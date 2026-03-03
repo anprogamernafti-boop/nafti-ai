@@ -138,6 +138,22 @@ box-shadow: var(--shadow-sm);
 overflow: hidden;
 }
 
+/* Change account actions: animated, accessible */
+.change-actions {
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height .28s cubic-bezier(.2,.9,.2,1), opacity .22s ease;
+	opacity: 0;
+}
+.change-actions.open {
+	max-height: 360px;
+	opacity: 1;
+}
+.change-actions .settings-item {
+	padding-left: 54px;
+	background: transparent;
+}
+
 .settings-item {
 display: flex;
 align-items: center;
@@ -287,7 +303,7 @@ margin-top: 32px;
 <div class="settings-section">
 <div class="section-label">Compte</div>
 <div class="settings-card">
-<a href="/logout" class="settings-item" onclick="return confirmSwitch()">
+<div class="settings-item" id="changeAccountBtn" role="button" tabindex="0" aria-expanded="false" aria-controls="changeAccountActions">
 <div class="settings-icon orange">
 <i class="fa-solid fa-arrow-right-arrow-left"></i>
 </div>
@@ -296,7 +312,31 @@ margin-top: 32px;
 <div class="settings-item-subtitle">Se connecter avec un autre compte</div>
 </div>
 <i class="fa-solid fa-chevron-right chevron"></i>
-</a>
+</div>
+
+<!-- Actions cachées pour changer de compte -->
+<div id="changeAccountActions" class="change-actions" role="region" aria-hidden="true" aria-label="Options pour changer de compte">
+	<div class="settings-item" id="loginAuthBtn" role="button" tabindex="0">
+		<div class="settings-icon blue">
+			<i class="fa-solid fa-right-to-bracket"></i>
+		</div>
+		<div class="settings-item-text">
+			<div class="settings-item-title">Se connecter à un compte existant</div>
+			<div class="settings-item-subtitle">Utilisez vos identifiants pour vous connecter</div>
+		</div>
+		<i class="fa-solid fa-chevron-right chevron"></i>
+	</div>
+	<div class="settings-item" id="signupAuthBtn" role="button" tabindex="0">
+		<div class="settings-icon purple">
+			<i class="fa-solid fa-user-plus"></i>
+		</div>
+		<div class="settings-item-text">
+			<div class="settings-item-title">Créer un compte</div>
+			<div class="settings-item-subtitle">Inscrivez-vous pour créer un nouveau compte</div>
+		</div>
+		<i class="fa-solid fa-chevron-right chevron"></i>
+	</div>
+</div>
 <a href="/logout" class="settings-item" id="logoutBtn">
 <div class="settings-icon red">
 <i class="fa-solid fa-right-from-bracket"></i>
@@ -352,6 +392,88 @@ else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').
 
 function confirmSwitch() {
 return true;
+}
+
+// Toggle pour les actions "Changer de compte"
+(function() {
+	var changeBtn = document.getElementById('changeAccountBtn');
+	var changeActions = document.getElementById('changeAccountActions');
+	if (!changeBtn || !changeActions) return;
+
+	changeBtn.addEventListener('click', function(e) {
+		e.preventDefault();
+		var open = changeActions.classList.toggle('open');
+		changeBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+		changeActions.setAttribute('aria-hidden', open ? 'false' : 'true');
+	});
+
+	// Fermer si clic en dehors
+	document.addEventListener('click', function(e) {
+		if (!changeBtn.contains(e.target) && !changeActions.contains(e.target)) {
+			if (changeActions.classList.contains('open')) {
+				changeActions.classList.remove('open');
+				changeBtn.setAttribute('aria-expanded', 'false');
+				changeActions.setAttribute('aria-hidden', 'true');
+			}
+		}
+	});
+
+	// Accessibilité: activer avec Enter/Space et fermer avec Escape
+	changeBtn.addEventListener('keydown', function(e) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			changeBtn.click();
+		} else if (e.key === 'Escape') {
+			if (changeActions.classList.contains('open')) {
+				changeActions.classList.remove('open');
+				changeBtn.setAttribute('aria-expanded', 'false');
+				changeActions.setAttribute('aria-hidden', 'true');
+				changeBtn.focus();
+			}
+		}
+	});
+	// Allow Escape to close when focus is inside the actions
+	changeActions.addEventListener('keydown', function(e) {
+		if (e.key === 'Escape') {
+			changeActions.classList.remove('open');
+			changeBtn.setAttribute('aria-expanded', 'false');
+			changeActions.setAttribute('aria-hidden', 'true');
+			changeBtn.focus();
+		}
+	});
+})();
+
+// Function to logout and redirect to auth page
+function logoutAndRedirect(target) {
+	window.location.href = '/logout?next=' + target;
+}
+
+// Auth button handlers: logout and redirect to login or signup
+var loginAuthBtn = document.getElementById('loginAuthBtn');
+var signupAuthBtn = document.getElementById('signupAuthBtn');
+if (loginAuthBtn) {
+	loginAuthBtn.addEventListener('click', function(e) {
+		e.preventDefault();
+		logoutAndRedirect('login');
+	});
+	loginAuthBtn.addEventListener('keydown', function(e) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			logoutAndRedirect('login');
+		}
+	});
+}
+if (signupAuthBtn) {
+	signupAuthBtn.addEventListener('click', function(e) {
+		e.preventDefault();
+		logoutAndRedirect('signup');
+	});
+	signupAuthBtn.addEventListener('keydown', function(e) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			logoutAndRedirect('signup');
+		}
+	});
 }
 
 document.getElementById('clearAllBtn').addEventListener('click', function() {

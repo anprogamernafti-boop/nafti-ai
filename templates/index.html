@@ -1235,6 +1235,14 @@ transform: translateY(-1px);
       if (registerSection) registerSection.style.display = '';
     }
 
+    // Check URL params to open auth sections directly (e.g. /?auth=login or /?auth=signup)
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var auth = params.get('auth');
+      if (auth === 'login') { hideIntro(); showLogin(); history.replaceState(null, '', window.location.pathname); }
+      else if (auth === 'signup') { hideIntro(); showRegister(); history.replaceState(null, '', window.location.pathname); }
+    } catch (e) {}
+
     if (goSignIn) {
       goSignIn.addEventListener('click', function() { hideIntro(); showLogin(); });
     }

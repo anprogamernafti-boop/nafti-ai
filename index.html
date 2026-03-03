@@ -261,14 +261,33 @@ border-radius: var(--radius-md);
 cursor:pointer;
 }
 .google-btn {
-display:inline-block;
-margin-top:12px;
-padding:10px 16px;
+display:inline-flex;
+align-items:center;
+margin-top:16px;
+padding:11px 20px;
 background:#4285F4;
 color:#fff;
 border-radius:var(--radius-md);
 text-decoration:none;
+font-family:'Inter',sans-serif;
+font-weight:600;
+font-size:14px;
+transition: all .2s ease;
+box-shadow: 0 2px 8px rgba(66,133,244,0.25);
 }
+.google-btn:hover { background:#3367D6; transform:translateY(-1px); }
+
+.auth-switch {
+margin-top:12px;
+font-size:13px;
+color:var(--text-secondary);
+}
+.auth-switch a {
+color:var(--accent);
+text-decoration:none;
+font-weight:600;
+}
+.auth-switch a:hover { text-decoration:underline; }
 
 @keyframes fadeUp {
 from { opacity: 0; transform: translateY(24px); }
@@ -920,6 +939,53 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
 .intro-cta-btn { padding: 12px 20px; font-size: 14px; }
 }
 
+/* ── Intro Auth Row ── */
+.intro-auth-row {
+position: absolute;
+top: 20px;
+right: 20px;
+display: flex;
+gap: 10px;
+z-index: 10;
+}
+
+.intro-signin-btn,
+.intro-signup-btn {
+padding: 9px 22px;
+border-radius: var(--radius-md);
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+font-size: 14px;
+cursor: pointer;
+transition: all .25s ease;
+letter-spacing: 0.2px;
+}
+
+.intro-signin-btn {
+background: transparent;
+border: 1.5px solid var(--border);
+color: var(--text-primary);
+}
+
+.intro-signin-btn:hover {
+border-color: var(--accent);
+color: var(--accent);
+background: var(--accent-glow);
+}
+
+.intro-signup-btn {
+background: var(--accent);
+border: 1.5px solid var(--accent);
+color: #fff;
+box-shadow: 0 4px 12px rgba(10,143,148,0.2);
+}
+
+.intro-signup-btn:hover {
+background: var(--accent-light);
+border-color: var(--accent-light);
+transform: translateY(-1px);
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
 .header { padding: 10px 14px; }
@@ -935,12 +1001,51 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
 .suggestions { gap: 6px; }
 .suggestion-chip { font-size: 12px; padding: 10px 12px; }
 .chip-icon { width: 26px; height: 26px; font-size: 11px; }
+.intro-auth-row { top: 14px; right: 14px; gap: 8px; }
+.intro-signin-btn, .intro-signup-btn { padding: 8px 16px; font-size: 13px; }
 }
 </style>
 </head>
 <body>
+<!-- Intro Splash Screen -->
+<div class="intro-overlay" id="introOverlay">
 {% if not session.get('user') %}
-<div class="auth-page">
+<div class="intro-auth-row">
+<button class="intro-signin-btn" id="goSignIn">Sign In</button>
+<button class="intro-signup-btn" id="goSignUp">Sign Up</button>
+</div>
+{% endif %}
+<div class="intro-container">
+<div class="intro-icon">
+<i class="fa-solid fa-bolt"></i>
+</div>
+<h1 class="intro-title">Nafti AI</h1>
+<div class="intro-tagline">Assistant IA Intelligent</div>
+<p class="intro-description">Acc&eacute;dez &agrave; une intelligence artificielle professionnelle con&ccedil;ue pour am&eacute;liorer votre productivit&eacute;. R&eacute;ponses pr&eacute;cises, rapides et adapt&eacute;es &agrave; votre contexte.</p>
+<div class="intro-features">
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-brain"></i></div>
+<div class="intro-feature-text">Intelligence avanc&eacute;e</div>
+</div>
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-bolt"></i></div>
+<div class="intro-feature-text">R&eacute;ponses instantan&eacute;es</div>
+</div>
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-shield"></i></div>
+<div class="intro-feature-text">Donn&eacute;es s&eacute;curis&eacute;es</div>
+</div>
+<div class="intro-feature">
+<div class="intro-feature-icon"><i class="fa-solid fa-sliders"></i></div>
+<div class="intro-feature-text">Hautement personnalis&eacute;e</div>
+</div>
+</div>
+<button class="intro-cta-btn" id="startBtn">{% if session.get('user') %}Acc&eacute;der &agrave; Nafti AI{% else %}Commencer{% endif %}</button>
+</div>
+</div>
+
+{% if not session.get('user') %}
+<div class="auth-page" id="authPage">
   {% with messages = get_flashed_messages() %}
   {% if messages %}
   <div class="flash-messages">
@@ -950,19 +1055,25 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
   </div>
   {% endif %}
   {% endwith %}
+  <div id="loginSection">
   <h2>Connexion</h2>
   <form method="post" action="/login" class="auth-form">
     <input type="email" name="email" placeholder="Email" required>
     <input type="password" name="password" placeholder="Mot de passe" required>
     <button type="submit">Se connecter</button>
   </form>
+  <p class="auth-switch">Pas encore de compte ? <a href="#" id="switchToSignUp">Cr&eacute;er un compte</a></p>
+  </div>
+  <div id="registerSection" style="display:none;">
   <h2>Inscription</h2>
   <form method="post" action="/register" class="auth-form">
     <input type="email" name="email" placeholder="Email" required>
     <input type="password" name="password" placeholder="Mot de passe" required>
-    <button type="submit">Créer un compte</button>
+    <button type="submit">Cr&eacute;er un compte</button>
   </form>
-  <a href="{{ url_for('google.login') }}" class="google-btn">Se connecter avec Google</a>
+  <p class="auth-switch">D&eacute;j&agrave; un compte ? <a href="#" id="switchToSignIn">Se connecter</a></p>
+  </div>
+  <a href="{{ url_for('google.login') }}" class="google-btn"><i class="fa-brands fa-google"></i>&nbsp; Continuer avec Google</a>
 </div>
 {% else %}
 
@@ -1023,37 +1134,6 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
 </div>
 </div>
 
-<!-- Intro Splash Screen -->
-<div class="intro-overlay" id="introOverlay">
-<div class="intro-container">
-<div class="intro-icon">
-<i class="fa-solid fa-bolt"></i>
-</div>
-<h1 class="intro-title">Nafti AI</h1>
-<div class="intro-tagline">Assistant IA Intelligent</div>
-<p class="intro-description">Accédez à une intelligence artificielle professionnelle conçue pour améliorer votre productivité. Réponses précises, rapides et adaptées à votre contexte.</p>
-<div class="intro-features">
-<div class="intro-feature">
-<div class="intro-feature-icon"><i class="fa-solid fa-brain"></i></div>
-<div class="intro-feature-text">Intelligence avancée</div>
-</div>
-<div class="intro-feature">
-<div class="intro-feature-icon"><i class="fa-solid fa-bolt"></i></div>
-<div class="intro-feature-text">Réponses instantanées</div>
-</div>
-<div class="intro-feature">
-<div class="intro-feature-icon"><i class="fa-solid fa-shield"></i></div>
-<div class="intro-feature-text">Données sécurisées</div>
-</div>
-<div class="intro-feature">
-<div class="intro-feature-icon"><i class="fa-solid fa-sliders"></i></div>
-<div class="intro-feature-text">Hautement personnalisée</div>
-</div>
-</div>
-<button class="intro-cta-btn" id="startBtn">Accéder à Nafti AI</button>
-</div>
-</div>
-
 <!-- Chat Area -->
 <div class="chat-area" id="chatArea">
 <div class="welcome" id="welcomeScreen">
@@ -1111,6 +1191,8 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
   (function() {
     var introOverlay = document.getElementById('introOverlay');
     var startBtn = document.getElementById('startBtn');
+    var goSignIn = document.getElementById('goSignIn');
+    var goSignUp = document.getElementById('goSignUp');
 
     function showIntro() {
       if (introOverlay) introOverlay.classList.remove('hidden');
@@ -1137,6 +1219,37 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
           if (messageInput) messageInput.focus();
         } catch (e) {}
       });
+    }
+
+    // Auth buttons on intro (for non-logged users)
+    function showLogin() {
+      var loginSection = document.getElementById('loginSection');
+      var registerSection = document.getElementById('registerSection');
+      if (loginSection) loginSection.style.display = '';
+      if (registerSection) registerSection.style.display = 'none';
+    }
+    function showRegister() {
+      var loginSection = document.getElementById('loginSection');
+      var registerSection = document.getElementById('registerSection');
+      if (loginSection) loginSection.style.display = 'none';
+      if (registerSection) registerSection.style.display = '';
+    }
+
+    if (goSignIn) {
+      goSignIn.addEventListener('click', function() { hideIntro(); showLogin(); });
+    }
+    if (goSignUp) {
+      goSignUp.addEventListener('click', function() { hideIntro(); showRegister(); });
+    }
+
+    // Switch links inside auth page
+    var switchToSignUp = document.getElementById('switchToSignUp');
+    var switchToSignIn = document.getElementById('switchToSignIn');
+    if (switchToSignUp) {
+      switchToSignUp.addEventListener('click', function(e) { e.preventDefault(); showRegister(); });
+    }
+    if (switchToSignIn) {
+      switchToSignIn.addEventListener('click', function(e) { e.preventDefault(); showLogin(); });
     }
   })();
 </script>

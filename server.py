@@ -221,6 +221,11 @@ def delete_session_route():
 @app.route('/logout')
 def logout():
     session.pop('user', None)
+    next_param = request.args.get('next')
+    if next_param == 'login':
+        return redirect(url_for('index') + '?auth=login')
+    elif next_param == 'signup':
+        return redirect(url_for('index') + '?auth=signup')
     return redirect(url_for('index'))
 
 @app.route('/google_callback')
