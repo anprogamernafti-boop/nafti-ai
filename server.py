@@ -151,6 +151,23 @@ def login():
     session['user'] = email
     return redirect(url_for('index'))
 
+@app.route('/settings')
+def settings_view():
+    user = session.get('user')
+    if not user:
+        return redirect(url_for('index'))
+    return render_template('settings.html')
+
+@app.route('/sessions/clear-all', methods=['POST'])
+def clear_all_sessions():
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    histories = load_history()
+    histories[user] = []
+    save_history(histories)
+    return jsonify({"status": "cleared"})
+
 @app.route('/history')
 def history_view():
     user = session.get('user')
