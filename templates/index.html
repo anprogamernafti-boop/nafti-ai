@@ -979,6 +979,9 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
 <button class="header-btn" id="homeBtn" title="Retour &agrave; l'accueil">
 <i class="fa-solid fa-house"></i>
 </button>
+<button class="header-btn" id="historyBtn" title="Historique des conversations">
+<i class="fa-solid fa-clock-rotate-left"></i>
+</button>
 <button class="header-btn" id="themeToggleBtn" title="Changer de th&egrave;me">
 <i class="fa-solid fa-moon" id="themeIcon"></i>
 </button>
@@ -1250,9 +1253,13 @@ if (welcomeScreen) {
 welcomeScreen.style.display = '';
 welcomeScreen.style.animation = 'fadeUp .5s cubic-bezier(.22,1,.36,1)';
 }
-// Clear history
+// Clear history & session
 if (typeof conversationHistory !== 'undefined') {
 conversationHistory.length = 0;
+}
+window.currentSessionId = null;
+if (window.history.replaceState) {
+window.history.replaceState(null, '', '/');
 }
 // Reset state
 if (typeof isGenerating !== 'undefined') {
@@ -1282,6 +1289,7 @@ var welcomeScreen = document.getElementById('welcomeScreen');
 // Expose for home button
 window.isGenerating = false;
 window.conversationHistory = [];
+window.currentSessionId = null;
 
 var currentAIBubble = null;
 var AI_ENDPOINT = '/api/ai';
@@ -1301,7 +1309,7 @@ try {
 res = await fetch(AI_ENDPOINT, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ messages: messages })
+body: JSON.stringify({ messages: messages, session_id: window.currentSessionId })
 });
 } catch (networkErr) {
 throw new Error('Erreur reseau : ' + networkErr.message);
@@ -1404,6 +1412,13 @@ sendBtn.disabled = true;
 addUserMessage(text);
 messageInput.value = '';
 messageInput.style.height = 'auto';
+if (!window.currentSessionId) {
+try {
+var sessResp = await fetch('/session/new', { method: 'POST' });
+var sessData = await sessResp.json();
+window.currentSessionId = sessData.id;
+} catch (e) { console.error('Failed to create session', e); }
+}
 window.conversationHistory.push({ role: 'user', content: text });
 var messages = [SYSTEM_MESSAGE].concat(window.conversationHistory);
 currentAIBubble = addAIMessage();
@@ -1424,6 +1439,39 @@ finishGeneration();
 }
 
 window.sendMessage = sendMessage;
+
+// History button
+var historyBtn = document.getElementById('historyBtn');
+if (historyBtn) {
+historyBtn.addEventListener('click', function() {
+window.location.href = '/history';
+});
+}
+
+// Load session from URL params
+var urlParams = new URLSearchParams(window.location.search);
+var sessionParam = urlParams.get('session');
+if (sessionParam) {
+window.currentSessionId = sessionParam;
+fetch('/api/session/' + sessionParam)
+.then(function(r) { return r.json(); })
+.then(function(data) {
+if (data.messages && data.messages.length > 0) {
+hideWelcome();
+data.messages.forEach(function(m) {
+if (m.role === 'user') {
+addUserMessage(m.content);
+} else if (m.role === 'assistant') {
+var bubble = addAIMessage();
+bubble.innerHTML = parseMarkdown(m.content);
+}
+window.conversationHistory.push(m);
+});
+scrollToBottom();
+}
+})
+.catch(function(e) { console.error('Failed to load session', e); });
+}
 })();
 </script>
 

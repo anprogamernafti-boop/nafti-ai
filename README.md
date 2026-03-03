@@ -7,11 +7,14 @@ unchanged, and authentication simply guards access to the interface.
 ## Features
 
 - Chat interface powered by Groq API (`/api/ai` proxy)
+- Multi-session support with per-user conversation storage
+  - Start new sessions or clear current session from the header
+  - View all sessions on a dedicated history page (with delete option)
 - PWA support with service worker & install prompts
 - Splash intro screen on each visit
 - Theme toggle (light/dark)
 - **Authentication**:
-  - Email / password (stored in SQLite)
+  - Email / password (stored in flat files)
   - Google OAuth2 (via `flask-dance`)
 
 ## Setup
@@ -41,7 +44,7 @@ unchanged, and authentication simply guards access to the interface.
    python server.py
    ```
 
-   The SQLite database (`nafti_users.db`) will be created automatically on first run.
+- User & chat data files (`users.json`, `history.json`) will be created automatically on first run.
 
 4. **Open** http://localhost:5000 in your browser. You will see the login/registration page.
 

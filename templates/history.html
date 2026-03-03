@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nafti AI - Historique</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root {
+--bg-primary: #F5F5F7;
+--bg-secondary: rgba(255,255,255,0.72);
+--bg-chat: #FFFFFF;
+--text-primary: #1D1D1F;
+--text-secondary: #6E6E73;
+--text-muted: #AEAEB2;
+--accent: #0A8F94;
+--accent-light: #0FC2C8;
+--accent-glow: rgba(10,143,148,0.12);
+--gold: #C79B3B;
+--gold-light: #E8C56D;
+--border: rgba(0,0,0,0.06);
+--shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+--shadow: 0 4px 24px rgba(0,0,0,0.06);
+--shadow-lg: 0 12px 48px rgba(0,0,0,0.1);
+--glass: rgba(255,255,255,0.72);
+--glass-border: rgba(255,255,255,0.3);
+--radius-sm: 12px;
+--radius-md: 16px;
+--radius-lg: 24px;
+--radius-xl: 28px;
+--error-text: #DC2626;
+}
+
+html.dark {
+--bg-primary: #0C0C0E;
+--bg-secondary: rgba(28,28,32,0.8);
+--bg-chat: #18181B;
+--text-primary: #F4F4F5;
+--text-secondary: #A1A1AA;
+--text-muted: #52525B;
+--accent: #22D3EE;
+--accent-light: #67E8F9;
+--accent-glow: rgba(34,211,238,0.1);
+--gold: #F59E0B;
+--gold-light: #FCD34D;
+--border: rgba(255,255,255,0.06);
+--shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+--shadow: 0 4px 24px rgba(0,0,0,0.25);
+--shadow-lg: 0 12px 48px rgba(0,0,0,0.4);
+--glass: rgba(28,28,32,0.8);
+--glass-border: rgba(255,255,255,0.05);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+background: var(--bg-primary);
+color: var(--text-primary);
+min-height: 100dvh;
+-webkit-font-smoothing: antialiased;
+}
+
+body::before {
+content: '';
+position: fixed;
+inset: 0;
+background:
+radial-gradient(ellipse 60% 50% at 10% 20%, var(--accent-glow) 0%, transparent 70%),
+radial-gradient(ellipse 50% 40% at 90% 80%, rgba(199,155,59,0.06) 0%, transparent 70%);
+pointer-events: none;
+z-index: 0;
+}
+
+.header {
+position: sticky;
+top: 0;
+z-index: 10;
+padding: 12px 16px;
+display: flex;
+align-items: center;
+gap: 12px;
+border-bottom: 1px solid var(--border);
+background: var(--glass);
+backdrop-filter: blur(40px) saturate(180%);
+-webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+.logo-container {
+width: 42px;
+height: 42px;
+border-radius: var(--radius-sm);
+background: linear-gradient(135deg, var(--accent), var(--gold));
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+box-shadow: 0 4px 14px rgba(10,143,148,0.3);
+}
+.logo-container i { font-size: 18px; color: #FFF; }
+
+.header-info { flex: 1; min-width: 0; }
+.header-info h1 {
+font-size: 19px;
+font-weight: 800;
+letter-spacing: -0.4px;
+background: linear-gradient(135deg, var(--accent), var(--gold));
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+line-height: 1.2;
+}
+.header-info p {
+font-size: 11px;
+color: var(--text-muted);
+font-weight: 500;
+margin-top: 1px;
+}
+
+.header-btn {
+width: 38px; height: 38px;
+border-radius: var(--radius-sm);
+border: 1.5px solid var(--border);
+background: var(--bg-chat);
+color: var(--text-secondary);
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+font-size: 15px;
+transition: all .2s ease;
+flex-shrink: 0;
+text-decoration: none;
+}
+.header-btn:hover {
+border-color: var(--accent);
+color: var(--accent);
+background: var(--accent-glow);
+}
+
+.content {
+position: relative;
+z-index: 1;
+max-width: 600px;
+margin: 0 auto;
+padding: 20px 16px;
+}
+
+.page-title {
+font-size: 22px;
+font-weight: 800;
+margin-bottom: 20px;
+letter-spacing: -0.4px;
+}
+
+.session-list {
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+
+.session-card {
+background: var(--bg-chat);
+border: 1px solid var(--border);
+border-radius: var(--radius-md);
+padding: 16px 18px;
+display: flex;
+align-items: center;
+gap: 14px;
+cursor: pointer;
+transition: all .25s ease;
+box-shadow: var(--shadow-sm);
+text-decoration: none;
+color: inherit;
+}
+.session-card:hover {
+border-color: var(--accent);
+box-shadow: 0 4px 16px var(--accent-glow);
+transform: translateY(-1px);
+}
+
+.session-icon {
+width: 40px; height: 40px;
+border-radius: var(--radius-sm);
+background: var(--accent-glow);
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+font-size: 16px;
+color: var(--accent);
+}
+
+.session-info { flex: 1; min-width: 0; }
+.session-title {
+font-size: 14px;
+font-weight: 700;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+margin-bottom: 3px;
+}
+.session-meta {
+font-size: 11px;
+color: var(--text-muted);
+font-weight: 500;
+}
+
+.session-delete {
+width: 32px; height: 32px;
+border-radius: 8px;
+border: none;
+background: transparent;
+color: var(--text-muted);
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+font-size: 14px;
+transition: all .2s ease;
+flex-shrink: 0;
+}
+.session-delete:hover {
+background: rgba(220,38,38,0.1);
+color: var(--error-text);
+}
+
+.empty-state {
+text-align: center;
+padding: 60px 20px;
+color: var(--text-muted);
+}
+.empty-state i {
+font-size: 48px;
+margin-bottom: 16px;
+opacity: 0.4;
+}
+.empty-state p {
+font-size: 14px;
+line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+.header { padding: 10px 14px; }
+.header-info h1 { font-size: 17px; }
+.content { padding: 14px 10px; }
+.page-title { font-size: 19px; }
+.session-title { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+<div class="logo-container">
+<i class="fa-solid fa-bolt"></i>
+</div>
+<div class="header-info">
+<h1>Nafti AI</h1>
+<p>Historique des conversations</p>
+</div>
+<a class="header-btn" href="/" title="Retour au chat">
+<i class="fa-solid fa-arrow-left"></i>
+</a>
+</div>
+
+<div class="content">
+<h2 class="page-title">Vos conversations</h2>
+
+{% if sessions %}
+<div class="session-list">
+{% for sess in sessions|reverse %}
+<div class="session-card" data-id="{{ sess.id }}">
+<div class="session-icon">
+<i class="fa-solid fa-message"></i>
+</div>
+<div class="session-info" onclick="window.location.href='/?session={{ sess.id }}'">
+<div class="session-title">{{ sess.title or 'Nouvelle conversation' }}</div>
+<div class="session-meta">
+{{ sess.created_at[:10] if sess.created_at else '' }}
+&middot;
+{{ sess.messages|length if sess.messages else 0 }} message{{ 's' if sess.messages and sess.messages|length > 1 else '' }}
+</div>
+</div>
+<button class="session-delete" onclick="deleteSession('{{ sess.id }}')" title="Supprimer">
+<i class="fa-solid fa-trash"></i>
+</button>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+<i class="fa-solid fa-clock-rotate-left"></i>
+<p>Aucune conversation pour le moment.<br>Commencez &agrave; discuter avec Nafti AI !</p>
+</div>
+{% endif %}
+</div>
+
+<script>
+// Apply saved theme
+(function() {
+var saved;
+try { saved = localStorage.getItem('nafti-theme'); } catch(e) {}
+if (saved === 'dark') document.documentElement.classList.add('dark');
+else if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+})();
+
+function deleteSession(sessionId) {
+if (!confirm('Supprimer cette conversation ?')) return;
+fetch('/session/delete', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ session_id: sessionId })
+}).then(function(r) {
+if (r.ok) {
+var card = document.querySelector('.session-card[data-id="' + sessionId + '"]');
+if (card) {
+card.style.transition = 'all .3s ease';
+card.style.opacity = '0';
+card.style.transform = 'translateX(-20px)';
+setTimeout(function() { card.remove(); }, 300);
+}
+}
+}).catch(function(e) { console.error('Delete failed', e); });
+}
+</script>
+
+</body>
+</html>

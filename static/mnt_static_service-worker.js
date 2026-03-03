@@ -5,8 +5,9 @@ const CACHE_NAME = 'nafti-ai-v1';
 const STATIC_ASSETS = [
   '/',
   '/static/manifest.json',
-  '/static/icons/icon-192.png',
-  '/static/icons/icon-512.png',
+  '/static/mnt_static_manifest.json',
+  '/static/mnt_static_icons_icon-192.png',
+  '/static/mnt_static_icons_icon-512.png',
   'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/marked/marked.min.js'
