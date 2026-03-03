@@ -985,6 +985,9 @@ box-shadow: 0 6px 16px rgba(10,143,148,0.2);
 <button class="header-btn" id="themeToggleBtn" title="Changer de th&egrave;me">
 <i class="fa-solid fa-moon" id="themeIcon"></i>
 </button>
+<button class="header-btn" id="settingsBtn" title="Param&egrave;tres">
+<i class="fa-solid fa-gear"></i>
+</button>
 <button class="header-btn accent-btn" id="headerInstallBtn" title="Installer l'application">
 <i class="fa-solid fa-download"></i>
 </button>
@@ -1445,6 +1448,14 @@ var historyBtn = document.getElementById('historyBtn');
 if (historyBtn) {
 historyBtn.addEventListener('click', function() {
 window.location.href = '/history';
+});
+}
+
+// Settings button
+var settingsBtn = document.getElementById('settingsBtn');
+if (settingsBtn) {
+settingsBtn.addEventListener('click', function() {
+window.location.href = '/settings';
 });
 }
 
