@@ -95,6 +95,7 @@ def verify_password(password, password_hash):
 # Configuration Groq (lue depuis .env)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # Google OAuth blueprint
@@ -268,6 +269,11 @@ def proxy_ai():
     data = request.get_json()
     messages = data.get("messages", [])
     session_id = data.get("session_id")
+    # Support multiple images (new) and single image (legacy)
+    images_data = data.get("images")  # list of data:image/...;base64,...
+    if not images_data:
+        single = data.get("image")
+        images_data = [single] if single else []
     user = session.get('user')
     if not user or not session_id:
         return jsonify({"error": "Missing session or user"}), 400
@@ -276,7 +282,7 @@ def proxy_ai():
         # maybe create automatically
         sess = create_session_for_user(user)
         session_id = sess['id']
-    
+
     if not messages:
         return jsonify({"error": "Aucun message fourni"}), 400
 
@@ -291,7 +297,8 @@ def proxy_ai():
     if not sess.get('title') or sess.get('title') == 'Nouvelle conversation':
         for m in stored:
             if m.get('role') == 'user':
-                sess['title'] = m['content'][:80]
+                title_text = m['content'] if isinstance(m['content'], str) else 'Image'
+                sess['title'] = title_text[:80]
                 break
     histories = load_history()
     histories[user] = histories.get(user, [])
@@ -302,6 +309,24 @@ def proxy_ai():
             break
     save_history(histories)
 
+    # If images are provided, use the vision model and format the last user message
+    use_model = GROQ_MODEL
+    api_messages = list(messages)
+    if images_data:
+        use_model = GROQ_VISION_MODEL
+        # Find the last user message and convert to multimodal format
+        for i in range(len(api_messages) - 1, -1, -1):
+            if api_messages[i].get('role') == 'user':
+                user_text = api_messages[i].get('content', 'Analyse cette image.')
+                content_parts = [{"type": "text", "text": user_text}]
+                for img in images_data:
+                    content_parts.append({"type": "image_url", "image_url": {"url": img}})
+                api_messages[i] = {
+                    "role": "user",
+                    "content": content_parts
+                }
+                break
+
     # Appel à l'API Groq (format OpenAI compatible)
     try:
         response = requests.post(
@@ -311,12 +336,12 @@ def proxy_ai():
                 "Content-Type": "application/json",
             },
             json={
-                "model": GROQ_MODEL,
-                "messages": messages,
+                "model": use_model,
+                "messages": api_messages,
                 "temperature": 0.7,
                 "max_tokens": 1500,
             },
-            timeout=30,
+            timeout=60,
         )
         response.raise_for_status()
         ai_resp = response.json()
@@ -368,7 +393,8 @@ if __name__ == "__main__":
     print("=" * 50)
     print("  🚀 Nafti AI - Serveur démarré (PWA activée)")
     print(f"  📍 http://0.0.0.0:{port}")
-    print(f"  🤖 Modèle: {GROQ_MODEL}")
+    print(f"  🤖 Modèle texte: {GROQ_MODEL}")
+    print(f"  🖼️  Modèle vision: {GROQ_VISION_MODEL}")
     print(f"  🔑 Clé API: {'✅ configurée' if GROQ_API_KEY else '❌ MANQUANTE'}")
     print(f"  📁 Utilisateurs: {USERS_FILE} (auto-créé)")
     print("=" * 50)
