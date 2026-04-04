@@ -6,6 +6,7 @@ import os
 import json
 import hashlib
 import uuid
+import base64
 from pathlib import Path
 from datetime import datetime
 from flask_dance.contrib.google import make_google_blueprint, google
@@ -98,6 +99,10 @@ GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
+# Configuration Gemini (image generation)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_IMAGE_MODEL = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
+
 # Google OAuth blueprint
 google_bp = make_google_blueprint(
     client_id=os.getenv('GOOGLE_CLIENT_ID'),
@@ -125,12 +130,12 @@ def register():
     if not email or not password:
         flash("Email et mot de passe requis")
         return redirect(url_for('index'))
-    
+
     users = load_users()
     if email in users:
         flash("Email déjà utilisé")
         return redirect(url_for('index'))
-    
+
     users[email] = {
         'password_hash': hash_password(password),
         'google_id': None
@@ -144,11 +149,11 @@ def login():
     email = request.form.get('email')
     password = request.form.get('password')
     users = load_users()
-    
+
     if email not in users or not verify_password(password, users[email]['password_hash']):
         flash("Identifiants invalides")
         return redirect(url_for('index'))
-    
+
     session['user'] = email
     return redirect(url_for('index'))
 
@@ -238,7 +243,7 @@ def google_callback():
         return "Erreur Google OAuth", 500
     info = resp.json()
     email = info.get('email')
-    
+
     # Auto-login or create user with Google
     users = load_users()
     if email not in users:
@@ -247,7 +252,7 @@ def google_callback():
             'google_id': info.get('id')
         }
         save_users(users)
-    
+
     session['user'] = email
     return redirect(url_for('index'))
 
@@ -377,6 +382,85 @@ def proxy_ai():
         return jsonify({"error": f"Erreur réseau: {str(e)}"}), 502
 
 
+@app.route("/api/generate-image", methods=["POST"])
+def generate_image():
+    """Generate an image using Gemini (Nano Banana) and return base64"""
+    if 'user' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "Clé API Gemini manquante. Vérifiez votre fichier .env"}), 500
+
+    data = request.get_json()
+    prompt = data.get("prompt", "").strip()
+    if not prompt:
+        return jsonify({"error": "Veuillez fournir une description pour l'image."}), 400
+
+    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_IMAGE_MODEL}:generateContent?key={GEMINI_API_KEY}"
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ],
+        "generationConfig": {
+            "responseModalities": ["TEXT", "IMAGE"]
+        }
+    }
+
+    try:
+        response = requests.post(
+            gemini_url,
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=120,
+        )
+        response.raise_for_status()
+        result = response.json()
+
+        # Extract image and text from Gemini response
+        image_base64 = None
+        mime_type = None
+        text_response = ""
+
+        candidates = result.get("candidates", [])
+        if candidates:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            for part in parts:
+                if "inlineData" in part:
+                    image_base64 = part["inlineData"]["data"]
+                    mime_type = part["inlineData"].get("mimeType", "image/png")
+                elif "text" in part:
+                    text_response = part["text"]
+
+        if not image_base64:
+            return jsonify({"error": "Aucune image générée. Essayez un autre prompt."}), 500
+
+        return jsonify({
+            "image_base64": image_base64,
+            "mime_type": mime_type,
+            "text": text_response
+        })
+
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "La génération d'image a pris trop de temps."}), 504
+    except requests.exceptions.HTTPError as e:
+        detail = ""
+        status_code = 502
+        if e.response is not None:
+            status_code = e.response.status_code
+            try:
+                err_data = e.response.json().get("error", {})
+                detail = err_data.get("message", e.response.text)
+            except Exception:
+                detail = e.response.text
+        return jsonify({"error": f"Erreur API Gemini: {detail or str(e)}"}), status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Erreur réseau: {str(e)}"}), 502
+
+
 @app.route('/api/session/<session_id>')
 def get_session_data(session_id):
     user = session.get('user')
@@ -395,7 +479,9 @@ if __name__ == "__main__":
     print(f"  📍 http://0.0.0.0:{port}")
     print(f"  🤖 Modèle texte: {GROQ_MODEL}")
     print(f"  🖼️  Modèle vision: {GROQ_VISION_MODEL}")
-    print(f"  🔑 Clé API: {'✅ configurée' if GROQ_API_KEY else '❌ MANQUANTE'}")
+    print(f"  🎨 Modèle image: {GEMINI_IMAGE_MODEL}")
+    print(f"  🔑 Clé Groq: {'✅ configurée' if GROQ_API_KEY else '❌ MANQUANTE'}")
+    print(f"  🔑 Clé Gemini: {'✅ configurée' if GEMINI_API_KEY else '❌ MANQUANTE'}")
     print(f"  📁 Utilisateurs: {USERS_FILE} (auto-créé)")
     print("=" * 50)
     app.run(host="0.0.0.0", port=port, debug=False)

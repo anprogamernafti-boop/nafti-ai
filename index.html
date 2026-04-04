@@ -580,6 +580,74 @@ backdrop-filter: blur(40px) saturate(180%);
 -webkit-backdrop-filter: blur(40px) saturate(180%);
 }
 
+/* Attachment preview bar (multi) */
+.attachment-preview {
+display: none;
+padding: 8px 12px;
+margin-bottom: 8px;
+background: var(--input-bg);
+border: 1.5px solid var(--border);
+border-radius: var(--radius-md);
+gap: 8px;
+animation: fadeIn .2s ease-out;
+flex-wrap: wrap;
+align-items: flex-start;
+}
+.attachment-preview.active { display: flex; }
+.attachment-preview-item {
+display: flex;
+align-items: center;
+gap: 8px;
+background: var(--bg-primary);
+border: 1px solid var(--border);
+border-radius: 10px;
+padding: 6px 8px;
+max-width: 220px;
+animation: fadeIn .2s ease-out;
+}
+.attachment-preview-thumb {
+width: 42px; height: 42px;
+border-radius: 8px;
+object-fit: cover;
+border: 1px solid var(--border);
+flex-shrink: 0;
+}
+.attachment-preview-info {
+flex: 1;
+min-width: 0;
+}
+.attachment-preview-name {
+font-size: 12px;
+font-weight: 600;
+color: var(--text-primary);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.attachment-preview-size {
+font-size: 10px;
+color: var(--text-muted);
+margin-top: 1px;
+}
+.attachment-preview-remove {
+width: 24px; height: 24px;
+border-radius: 6px;
+border: none;
+background: var(--error-bg);
+color: var(--error-text);
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+font-size: 11px;
+flex-shrink: 0;
+transition: all .2s ease;
+}
+.attachment-preview-remove:hover {
+background: var(--error-text);
+color: #fff;
+}
+
 .input-wrapper {
 display: flex;
 align-items: flex-end;
@@ -587,7 +655,7 @@ gap: 8px;
 background: var(--input-bg);
 border: 2px solid var(--input-border);
 border-radius: var(--radius-xl);
-padding: 5px 5px 5px 18px;
+padding: 5px 5px 5px 10px;
 transition: border-color .25s, box-shadow .25s;
 box-shadow: var(--shadow-sm);
 }
@@ -595,6 +663,77 @@ box-shadow: var(--shadow-sm);
 .input-wrapper:focus-within {
 border-color: var(--accent);
 box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+/* "+" Attachment button */
+.attach-btn {
+width: 38px; height: 38px;
+border-radius: 50%;
+border: 1.5px solid var(--border);
+background: var(--bg-chat);
+color: var(--text-secondary);
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+flex-shrink: 0;
+font-size: 18px;
+transition: all .2s ease;
+position: relative;
+}
+.attach-btn:hover {
+border-color: var(--accent);
+color: var(--accent);
+background: var(--accent-glow);
+}
+.attach-btn:active { transform: scale(.92); }
+
+/* Attachment popup */
+.attach-popup {
+display: none;
+position: absolute;
+bottom: calc(100% + 8px);
+left: 0;
+background: var(--bg-chat);
+border: 1.5px solid var(--border);
+border-radius: var(--radius-md);
+box-shadow: var(--shadow-lg);
+padding: 10px 0;
+min-width: 220px;
+z-index: 100;
+animation: modalSlideUp .2s cubic-bezier(.22,1,.36,1);
+}
+.attach-popup.active { display: block; }
+
+.attach-popup-title {
+font-size: 12px;
+font-weight: 700;
+color: var(--text-muted);
+text-transform: uppercase;
+letter-spacing: .6px;
+padding: 4px 16px 10px;
+}
+
+.attach-popup-item {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 11px 16px;
+cursor: pointer;
+transition: background .15s ease;
+font-size: 14px;
+font-weight: 600;
+color: var(--text-primary);
+}
+.attach-popup-item:hover {
+background: var(--accent-glow);
+color: var(--accent);
+}
+.attach-popup-item i {
+font-size: 16px;
+width: 20px;
+text-align: center;
+color: var(--accent);
 }
 
 #messageInput {
@@ -641,6 +780,196 @@ margin-top: 7px;
 letter-spacing: .3px;
 font-weight: 500;
 }
+
+/* User bubble image */
+.user-attachment-img {
+max-width: 200px;
+max-height: 160px;
+border-radius: 12px;
+margin-top: 8px;
+display: block;
+}
+
+/* AI generated image in bubble */
+.ai-generated-img {
+max-width: 100%;
+max-height: 400px;
+border-radius: 12px;
+margin-top: 8px;
+display: block;
+cursor: pointer;
+transition: transform .2s ease;
+}
+.ai-generated-img:hover { transform: scale(1.02); }
+
+/* ── Image Generation Modal ── */
+.imggen-modal-overlay {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.55);
+z-index: 2000;
+align-items: center;
+justify-content: center;
+padding: 20px;
+animation: fadeIn .2s ease-out;
+}
+.imggen-modal-overlay.active { display: flex; }
+
+.imggen-modal {
+background: var(--bg-chat);
+border-radius: var(--radius-xl);
+padding: 24px 20px;
+max-width: 420px;
+width: 100%;
+box-shadow: var(--shadow-lg);
+animation: modalSlideUp .3s cubic-bezier(.22,1,.36,1);
+border: 1px solid var(--border);
+}
+
+.imggen-modal-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 18px;
+}
+
+.imggen-modal-icon {
+width: 46px; height: 46px;
+border-radius: 14px;
+background: linear-gradient(135deg, #8B5CF6, #EC4899);
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+}
+.imggen-modal-icon i { color: #fff; font-size: 20px; }
+
+.imggen-modal-header h3 {
+font-size: 18px;
+font-weight: 800;
+letter-spacing: -0.3px;
+}
+.imggen-modal-header p {
+font-size: 12px;
+color: var(--text-muted);
+margin-top: 2px;
+}
+
+.imggen-textarea {
+width: 100%;
+min-height: 90px;
+max-height: 160px;
+padding: 12px 14px;
+border: 2px solid var(--input-border);
+border-radius: var(--radius-md);
+background: var(--input-bg);
+color: var(--text-primary);
+font-family: 'Inter', sans-serif;
+font-size: 14px;
+line-height: 1.5;
+resize: vertical;
+outline: none;
+transition: border-color .2s ease;
+}
+.imggen-textarea:focus {
+border-color: #8B5CF6;
+}
+.imggen-textarea::placeholder { color: var(--text-muted); }
+
+.imggen-actions {
+display: flex;
+gap: 10px;
+margin-top: 14px;
+}
+
+.imggen-generate-btn {
+flex: 1;
+padding: 12px;
+border-radius: var(--radius-md);
+border: none;
+background: linear-gradient(135deg, #8B5CF6, #EC4899);
+color: #fff;
+font-family: 'Inter', sans-serif;
+font-weight: 700;
+font-size: 14px;
+cursor: pointer;
+transition: all .2s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+}
+.imggen-generate-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(139,92,246,0.3); }
+.imggen-generate-btn:active:not(:disabled) { transform: scale(.97); }
+.imggen-generate-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.imggen-cancel-btn {
+padding: 12px 20px;
+border-radius: var(--radius-md);
+border: 1.5px solid var(--border);
+background: var(--bg-chat);
+color: var(--text-secondary);
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+font-size: 14px;
+cursor: pointer;
+transition: all .2s ease;
+}
+.imggen-cancel-btn:hover {
+border-color: var(--text-muted);
+color: var(--text-primary);
+}
+
+.imggen-spinner {
+width: 18px; height: 18px;
+border: 2.5px solid rgba(255,255,255,.3);
+border-top-color: #fff;
+border-radius: 50%;
+animation: spin .7s linear infinite;
+display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Fullscreen image viewer */
+.fullscreen-img-overlay {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.85);
+z-index: 3000;
+align-items: center;
+justify-content: center;
+padding: 20px;
+cursor: zoom-out;
+animation: fadeIn .2s ease-out;
+}
+.fullscreen-img-overlay.active { display: flex; }
+.fullscreen-img-overlay img {
+max-width: 95%;
+max-height: 95%;
+border-radius: 12px;
+object-fit: contain;
+}
+.fullscreen-download-btn {
+position: absolute;
+bottom: 24px;
+right: 24px;
+padding: 10px 18px;
+border-radius: var(--radius-md);
+border: none;
+background: linear-gradient(135deg, var(--accent), var(--gold));
+color: #fff;
+font-family: 'Inter', sans-serif;
+font-weight: 700;
+font-size: 13px;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 6px;
+transition: transform .2s;
+}
+.fullscreen-download-btn:hover { transform: scale(1.04); }
 
 /* ── Install Modal ── */
 .install-modal-overlay {
@@ -1161,12 +1490,30 @@ transform: translateY(-1px);
 
 <!-- Input Area -->
 <div class="input-area">
+<div class="attachment-preview" id="attachmentPreview">
+<!-- items inserted dynamically -->
+</div>
 <div class="input-wrapper">
+<button class="attach-btn" id="attachBtn" title="Ajouter une pi&egrave;ce jointe">
+<i class="fa-solid fa-plus"></i>
+</button>
+<div class="attach-popup" id="attachPopup">
+<div class="attach-popup-title">T&eacute;l&eacute;charger la pi&egrave;ce jointe</div>
+<div class="attach-popup-item" id="photoLibBtn">
+<i class="fa-solid fa-image"></i>
+<span>Biblioth&egrave;que de photos</span>
+</div>
+<div class="attach-popup-item" id="imageGenBtn" style="color:#8B5CF6;">
+<i class="fa-solid fa-wand-magic-sparkles" style="color:#8B5CF6;"></i>
+<span>G&eacute;n&eacute;rer une image (IA)</span>
+</div>
+</div>
 <textarea id="messageInput" placeholder="Posez votre question..." rows="1" autocomplete="off"></textarea>
 <button class="send-btn" id="sendBtn" onclick="sendMessage()">
 <i class="fa-solid fa-paper-plane"></i>
 </button>
 </div>
+<input type="file" id="fileInput" accept="image/*" multiple style="display:none">
 <div class="powered-by">Propuls&eacute; par l'intelligence artificielle</div>
 </div>
 
@@ -1183,6 +1530,38 @@ transform: translateY(-1px);
 <button class="install-btn" id="installBtn">Installer</button>
 <button class="install-close" id="installClose">&times;</button>
 </div>
+</div>
+
+<!-- Image Generation Modal -->
+<div class="imggen-modal-overlay" id="imggenModalOverlay">
+<div class="imggen-modal">
+<div class="imggen-modal-header">
+<div class="imggen-modal-icon">
+<i class="fa-solid fa-wand-magic-sparkles"></i>
+</div>
+<div>
+<h3>G&eacute;n&eacute;rer une image</h3>
+<p>Mod&egrave;le : Gemini 2.5 Flash Image</p>
+</div>
+</div>
+<textarea class="imggen-textarea" id="imggenPrompt" placeholder="D&eacute;crivez l'image que vous souhaitez g&eacute;n&eacute;rer..."></textarea>
+<div class="imggen-actions">
+<button class="imggen-cancel-btn" id="imggenCancelBtn">Annuler</button>
+<button class="imggen-generate-btn" id="imggenGenerateBtn">
+<span class="imggen-spinner" id="imggenSpinner"></span>
+<i class="fa-solid fa-sparkles" id="imggenBtnIcon"></i>
+<span id="imggenBtnText">G&eacute;n&eacute;rer</span>
+</button>
+</div>
+</div>
+</div>
+
+<!-- Fullscreen Image Viewer -->
+<div class="fullscreen-img-overlay" id="fullscreenImgOverlay">
+<img id="fullscreenImg" src="" alt="Image">
+<button class="fullscreen-download-btn" id="fullscreenDownloadBtn">
+<i class="fa-solid fa-download"></i> T&eacute;l&eacute;charger
+</button>
 </div>
 
 {% endif %}
@@ -1417,6 +1796,7 @@ window.currentSessionId = null;
 
 var currentAIBubble = null;
 var AI_ENDPOINT = '/api/ai';
+window.pendingAttachments = []; // [{file, dataUrl, name, size}, ...]
 
 var SYSTEM_MESSAGE = {
 role: 'system',
@@ -1427,13 +1807,115 @@ content: 'Tu es Nafti AI, un assistant intelligent et bienveillant. ' +
 'pose une question clarificatrice avant de repondre. Priorise l\'utilite et la precision.'
 };
 
-async function callAI(messages) {
+// === Attachment logic (multi) ===
+(function() {
+var attachBtn = document.getElementById('attachBtn');
+var attachPopup = document.getElementById('attachPopup');
+var photoLibBtn = document.getElementById('photoLibBtn');
+var fileInput = document.getElementById('fileInput');
+var attachmentPreview = document.getElementById('attachmentPreview');
+
+function formatSize(bytes) {
+if (bytes < 1024) return bytes + ' B';
+var kb = bytes / 1024;
+if (kb < 1024) return kb.toFixed(1) + ' KB';
+return (kb / 1024).toFixed(1) + ' MB';
+}
+
+function renderPreviews() {
+attachmentPreview.innerHTML = '';
+if (window.pendingAttachments.length === 0) {
+attachmentPreview.classList.remove('active');
+return;
+}
+attachmentPreview.classList.add('active');
+window.pendingAttachments.forEach(function(att, idx) {
+var item = document.createElement('div');
+item.className = 'attachment-preview-item';
+var thumb = document.createElement('img');
+thumb.className = 'attachment-preview-thumb';
+thumb.src = att.dataUrl;
+thumb.alt = att.name;
+var info = document.createElement('div');
+info.className = 'attachment-preview-info';
+var nameEl = document.createElement('div');
+nameEl.className = 'attachment-preview-name';
+nameEl.textContent = att.name;
+var sizeEl = document.createElement('div');
+sizeEl.className = 'attachment-preview-size';
+sizeEl.textContent = formatSize(att.size);
+info.appendChild(nameEl);
+info.appendChild(sizeEl);
+var removeBtn = document.createElement('button');
+removeBtn.className = 'attachment-preview-remove';
+removeBtn.title = 'Supprimer';
+removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+removeBtn.addEventListener('click', function() {
+window.pendingAttachments.splice(idx, 1);
+renderPreviews();
+});
+item.appendChild(thumb);
+item.appendChild(info);
+item.appendChild(removeBtn);
+attachmentPreview.appendChild(item);
+});
+}
+
+attachBtn.addEventListener('click', function(e) {
+e.stopPropagation();
+attachPopup.classList.toggle('active');
+});
+
+document.addEventListener('click', function(e) {
+if (!attachPopup.contains(e.target) && e.target !== attachBtn) {
+attachPopup.classList.remove('active');
+}
+});
+
+photoLibBtn.addEventListener('click', function() {
+attachPopup.classList.remove('active');
+fileInput.click();
+});
+
+fileInput.addEventListener('change', function() {
+var files = Array.from(fileInput.files);
+if (!files.length) return;
+var loaded = 0;
+files.forEach(function(file) {
+var reader = new FileReader();
+reader.onload = function(ev) {
+window.pendingAttachments.push({
+file: file,
+dataUrl: ev.target.result,
+name: file.name,
+size: file.size
+});
+loaded++;
+if (loaded === files.length) renderPreviews();
+};
+reader.readAsDataURL(file);
+});
+fileInput.value = '';
+});
+
+window._renderAttachPreviews = renderPreviews;
+})();
+
+function formatBytes(bytes) {
+if (bytes < 1024) return bytes + ' B';
+if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+async function callAI(messages, images) {
 var res;
+var payload = { messages: messages, session_id: window.currentSessionId };
+if (images && images.length > 0) payload.images = images;
 try {
 res = await fetch(AI_ENDPOINT, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ messages: messages, session_id: window.currentSessionId })
+body: JSON.stringify(payload)
 });
 } catch (networkErr) {
 throw new Error('Erreur reseau : ' + networkErr.message);
@@ -1480,7 +1962,7 @@ function hideWelcome() {
 if (welcomeScreen) welcomeScreen.style.display = 'none';
 }
 
-function addUserMessage(text) {
+function addUserMessage(text, imageDataUrls) {
 hideWelcome();
 var group = document.createElement('div');
 group.className = 'message-group user';
@@ -1489,7 +1971,15 @@ label.className = 'message-label';
 label.textContent = 'Vous';
 var bubble = document.createElement('div');
 bubble.className = 'message-bubble';
-bubble.textContent = text;
+if (text) bubble.textContent = text;
+if (imageDataUrls && imageDataUrls.length > 0) {
+imageDataUrls.forEach(function(url) {
+var img = document.createElement('img');
+img.src = url;
+img.className = 'user-attachment-img';
+bubble.appendChild(img);
+});
+}
 group.appendChild(label);
 group.appendChild(bubble);
 chatArea.appendChild(group);
@@ -1530,12 +2020,22 @@ messageInput.focus();
 
 async function sendMessage() {
 var text = messageInput.value.trim();
-if (!text || window.isGenerating) return;
+var attachments = window.pendingAttachments.slice();
+if ((!text && attachments.length === 0) || window.isGenerating) return;
 window.isGenerating = true;
 sendBtn.disabled = true;
-addUserMessage(text);
+
+var imageDataUrls = attachments.map(function(a) { return a.dataUrl; });
+var imagesBase64 = imageDataUrls.length > 0 ? imageDataUrls : null;
+
+addUserMessage(text, imageDataUrls.length > 0 ? imageDataUrls : null);
 messageInput.value = '';
 messageInput.style.height = 'auto';
+
+// Clear attachments
+window.pendingAttachments = [];
+if (window._renderAttachPreviews) window._renderAttachPreviews();
+
 if (!window.currentSessionId) {
 try {
 var sessResp = await fetch('/session/new', { method: 'POST' });
@@ -1543,11 +2043,13 @@ var sessData = await sessResp.json();
 window.currentSessionId = sessData.id;
 } catch (e) { console.error('Failed to create session', e); }
 }
-window.conversationHistory.push({ role: 'user', content: text });
+var userContent = text || '';
+if (imagesBase64 && !userContent) userContent = imagesBase64.length > 1 ? 'Analyse ces images.' : 'Analyse cette image.';
+window.conversationHistory.push({ role: 'user', content: userContent });
 var messages = [SYSTEM_MESSAGE].concat(window.conversationHistory);
 currentAIBubble = addAIMessage();
 try {
-var aiText = await callAI(messages);
+var aiText = await callAI(messages, imagesBase64);
 if (currentAIBubble) {
 currentAIBubble.innerHTML = parseMarkdown(aiText);
 window.conversationHistory.push({ role: 'assistant', content: aiText });
@@ -1563,6 +2065,122 @@ finishGeneration();
 }
 
 window.sendMessage = sendMessage;
+
+// === Image Generation (Nano Banana / Gemini) ===
+(function() {
+var imggenModalOverlay = document.getElementById('imggenModalOverlay');
+var imggenPrompt = document.getElementById('imggenPrompt');
+var imggenGenerateBtn = document.getElementById('imggenGenerateBtn');
+var imggenCancelBtn = document.getElementById('imggenCancelBtn');
+var imggenSpinner = document.getElementById('imggenSpinner');
+var imggenBtnIcon = document.getElementById('imggenBtnIcon');
+var imggenBtnText = document.getElementById('imggenBtnText');
+var imageGenBtn = document.getElementById('imageGenBtn');
+var attachPopup = document.getElementById('attachPopup');
+var fullscreenImgOverlay = document.getElementById('fullscreenImgOverlay');
+var fullscreenImg = document.getElementById('fullscreenImg');
+var fullscreenDownloadBtn = document.getElementById('fullscreenDownloadBtn');
+var currentFullscreenSrc = '';
+
+if (imageGenBtn) {
+imageGenBtn.addEventListener('click', function() {
+if (attachPopup) attachPopup.classList.remove('active');
+if (imggenModalOverlay) imggenModalOverlay.classList.add('active');
+if (imggenPrompt) { imggenPrompt.value = ''; imggenPrompt.focus(); }
+});
+}
+
+if (imggenCancelBtn) {
+imggenCancelBtn.addEventListener('click', function() {
+if (imggenModalOverlay) imggenModalOverlay.classList.remove('active');
+});
+}
+
+if (imggenModalOverlay) {
+imggenModalOverlay.addEventListener('click', function(e) {
+if (e.target === imggenModalOverlay) imggenModalOverlay.classList.remove('active');
+});
+}
+
+function setImggenLoading(loading) {
+if (loading) {
+imggenGenerateBtn.disabled = true;
+imggenSpinner.style.display = 'block';
+imggenBtnIcon.style.display = 'none';
+imggenBtnText.textContent = 'G\u00e9n\u00e9ration...';
+} else {
+imggenGenerateBtn.disabled = false;
+imggenSpinner.style.display = 'none';
+imggenBtnIcon.style.display = '';
+imggenBtnText.textContent = 'G\u00e9n\u00e9rer';
+}
+}
+
+if (imggenGenerateBtn) {
+imggenGenerateBtn.addEventListener('click', async function() {
+var prompt = imggenPrompt.value.trim();
+if (!prompt) return;
+setImggenLoading(true);
+imggenModalOverlay.classList.remove('active');
+hideWelcome();
+
+// Show user message with prompt
+addUserMessage('\ud83c\udfa8 ' + prompt);
+
+// Show AI thinking bubble
+var aiBubble = addAIMessage();
+
+try {
+var res = await fetch('/api/generate-image', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ prompt: prompt })
+});
+var data = await res.json();
+if (data.error) throw new Error(data.error);
+
+var imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
+var html = '';
+if (data.text) html += parseMarkdown(data.text);
+html += '<img class="ai-generated-img" src="' + imgSrc + '" alt="Image g\u00e9n\u00e9r\u00e9e" onclick="window._openFullscreen(this.src)">';
+html += '<div style="margin-top:8px;font-size:11px;color:var(--text-muted);">\ud83c\udfa8 G\u00e9n\u00e9r\u00e9 par Gemini 2.5 Flash Image</div>';
+aiBubble.innerHTML = html;
+scrollToBottom();
+} catch (err) {
+showError(aiBubble, err.message || 'Erreur lors de la g\u00e9n\u00e9ration de l\'image.');
+}
+setImggenLoading(false);
+});
+}
+
+// Fullscreen image viewer
+window._openFullscreen = function(src) {
+currentFullscreenSrc = src;
+if (fullscreenImg) fullscreenImg.src = src;
+if (fullscreenImgOverlay) fullscreenImgOverlay.classList.add('active');
+};
+
+if (fullscreenImgOverlay) {
+fullscreenImgOverlay.addEventListener('click', function(e) {
+if (e.target === fullscreenImgOverlay || e.target === fullscreenImg) {
+fullscreenImgOverlay.classList.remove('active');
+}
+});
+}
+
+if (fullscreenDownloadBtn) {
+fullscreenDownloadBtn.addEventListener('click', function(e) {
+e.stopPropagation();
+if (!currentFullscreenSrc) return;
+var a = document.createElement('a');
+a.href = currentFullscreenSrc;
+a.download = 'nafti-ai-image-' + Date.now() + '.png';
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+});
+}
+})();
 
 // History button
 var historyBtn = document.getElementById('historyBtn');

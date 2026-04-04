@@ -1,9 +1,306 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Nafti AI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nafti AI - Image Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        textarea, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .slider-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .slider-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slider-item label {
+            margin-bottom: 8px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        .slider-value {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .output {
+            margin-top: 30px;
+            text-align: center;
+            display: none;
+        }
+        
+        .output.active {
+            display: block;
+        }
+        
+        .output img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loader.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .error.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nafti AI</h1>
+        <p class="subtitle">Free SDXL Image Generation - Powered by Hugging Face Spaces</p>
+        
+        <div class="form-group">
+            <label for="prompt">Describe what you want to generate:</label>
+            <textarea id="prompt" placeholder="A beautiful sunset over mountains, oil painting style..."></textarea>
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-item">
+                <label for="width">Width: <span id="widthValue">512</span></label>
+                <input type="range" id="width" min="256" max="1024" step="64" value="512">
+            </div>
+            <div class="slider-item">
+                <label for="height">Height: <span id="heightValue">512</span></label>
+                <input type="range" id="height" min="256" max="1024" step="64" value="512">
+            </div>
+        </div>
+        
+        <div class="slider-group" style="margin-top: 15px;">
+            <div class="slider-item">
+                <label for="steps">Steps: <span id="stepsValue">25</span></label>
+                <input type="range" id="steps" min="15" max="50" step="1" value="25">
+            </div>
+            <div class="slider-item">
+                <label for="guidance">Guidance: <span id="guidanceValue">7.5</span></label>
+                <input type="range" id="guidance" min="1" max="20" step="0.5" value="7.5">
+            </div>
+        </div>
+        
+        <button id="generateBtn" onclick="generate()">Generate Image</button>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Generating image, this may take 2-3 minutes...</p>
+        </div>
+        
+        <div class="output" id="output">
+            <img id="resultImage" src="" alt="Generated image">
+        </div>
+    </div>
+    
+    <script>
+        // Update slider display values
+        document.getElementById('width').addEventListener('input', (e) => {
+            document.getElementById('widthValue').textContent = e.target.value;
+        });
+        document.getElementById('height').addEventListener('input', (e) => {
+            document.getElementById('heightValue').textContent = e.target.value;
+        });
+        document.getElementById('steps').addEventListener('input', (e) => {
+            document.getElementById('stepsValue').textContent = e.target.value;
+        });
+        document.getElementById('guidance').addEventListener('input', (e) => {
+            document.getElementById('guidanceValue').textContent = e.target.value;
+        });
+        
+        async function generate() {
+            const prompt = document.getElementById('prompt').value;
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            const steps = document.getElementById('steps').value;
+            const guidance = document.getElementById('guidance').value;
+            const errorDiv = document.getElementById('error');
+            const loader = document.getElementById('loader');
+            const output = document.getElementById('output');
+            const btn = document.getElementById('generateBtn');
+            
+            if (!prompt.trim()) {
+                errorDiv.textContent = 'Please enter a prompt';
+                errorDiv.classList.add('active');
+                return;
+            }
+            
+            errorDiv.classList.remove('active');
+            loader.classList.add('active');
+            output.classList.remove('active');
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt,
+                        width,
+                        height,
+                        steps,
+                        guidance
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Generation failed');
+                }
+                
+                document.getElementById('resultImage').src = data.image;
+                output.classList.add('active');
+                loader.classList.remove('active');
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.classList.add('active');
+                loader.classList.remove('active');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        // Allow Enter key in textarea
+        document.getElementById('prompt').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                generate();
+            }
+        });
+    </script>
+</body>
+</html>
+
+
 
 <!-- PWA Meta Tags -->
 <link rel="manifest" href="/static/manifest.json">
@@ -494,6 +791,29 @@ color: var(--error-text);
 border: 1px solid var(--error-text);
 }
 
+.message-bubble .retry-btn {
+display: inline-block;
+margin-top: 12px;
+padding: 8px 16px;
+background: var(--accent);
+color: white;
+border: none;
+border-radius: var(--radius-sm);
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.message-bubble .retry-btn:hover {
+background: var(--accent-light);
+transform: translateY(-1px);
+}
+
+.message-bubble .retry-btn:active {
+transform: translateY(0);
+}
+
 /* Markdown */
 .message-bubble p { margin-bottom: 10px; }
 .message-bubble p:last-child { margin-bottom: 0; }
@@ -789,6 +1109,187 @@ border-radius: 12px;
 margin-top: 8px;
 display: block;
 }
+
+/* AI generated image in bubble */
+.ai-generated-img {
+max-width: 100%;
+max-height: 400px;
+border-radius: 12px;
+margin-top: 8px;
+display: block;
+cursor: pointer;
+transition: transform .2s ease;
+}
+.ai-generated-img:hover { transform: scale(1.02); }
+
+/* ── Image Generation Modal ── */
+.imggen-modal-overlay {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.55);
+z-index: 2000;
+align-items: center;
+justify-content: center;
+padding: 20px;
+animation: fadeIn .2s ease-out;
+}
+.imggen-modal-overlay.active { display: flex; }
+
+.imggen-modal {
+background: var(--bg-chat);
+border-radius: var(--radius-xl);
+padding: 24px 20px;
+max-width: 420px;
+width: 100%;
+box-shadow: var(--shadow-lg);
+animation: modalSlideUp .3s cubic-bezier(.22,1,.36,1);
+border: 1px solid var(--border);
+}
+
+.imggen-modal-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 18px;
+}
+
+.imggen-modal-icon {
+width: 46px; height: 46px;
+border-radius: 14px;
+background: linear-gradient(135deg, #8B5CF6, #EC4899);
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+}
+.imggen-modal-icon i { color: #fff; font-size: 20px; }
+
+.imggen-modal-header h3 {
+font-size: 18px;
+font-weight: 800;
+letter-spacing: -0.3px;
+}
+.imggen-modal-header p {
+font-size: 12px;
+color: var(--text-muted);
+margin-top: 2px;
+}
+
+.imggen-textarea {
+width: 100%;
+min-height: 90px;
+max-height: 160px;
+padding: 12px 14px;
+border: 2px solid var(--input-border);
+border-radius: var(--radius-md);
+background: var(--input-bg);
+color: var(--text-primary);
+font-family: 'Inter', sans-serif;
+font-size: 14px;
+line-height: 1.5;
+resize: vertical;
+outline: none;
+transition: border-color .2s ease;
+}
+.imggen-textarea:focus {
+border-color: #8B5CF6;
+}
+.imggen-textarea::placeholder { color: var(--text-muted); }
+
+.imggen-actions {
+display: flex;
+gap: 10px;
+margin-top: 14px;
+}
+
+.imggen-generate-btn {
+flex: 1;
+padding: 12px;
+border-radius: var(--radius-md);
+border: none;
+background: linear-gradient(135deg, #8B5CF6, #EC4899);
+color: #fff;
+font-family: 'Inter', sans-serif;
+font-weight: 700;
+font-size: 14px;
+cursor: pointer;
+transition: all .2s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+}
+.imggen-generate-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(139,92,246,0.3); }
+.imggen-generate-btn:active:not(:disabled) { transform: scale(.97); }
+.imggen-generate-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.imggen-cancel-btn {
+padding: 12px 20px;
+border-radius: var(--radius-md);
+border: 1.5px solid var(--border);
+background: var(--bg-chat);
+color: var(--text-secondary);
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+font-size: 14px;
+cursor: pointer;
+transition: all .2s ease;
+}
+.imggen-cancel-btn:hover {
+border-color: var(--text-muted);
+color: var(--text-primary);
+}
+
+.imggen-spinner {
+width: 18px; height: 18px;
+border: 2.5px solid rgba(255,255,255,.3);
+border-top-color: #fff;
+border-radius: 50%;
+animation: spin .7s linear infinite;
+display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Fullscreen image viewer */
+.fullscreen-img-overlay {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.85);
+z-index: 3000;
+align-items: center;
+justify-content: center;
+padding: 20px;
+cursor: zoom-out;
+animation: fadeIn .2s ease-out;
+}
+.fullscreen-img-overlay.active { display: flex; }
+.fullscreen-img-overlay img {
+max-width: 95%;
+max-height: 95%;
+border-radius: 12px;
+object-fit: contain;
+}
+.fullscreen-download-btn {
+position: absolute;
+bottom: 24px;
+right: 24px;
+padding: 10px 18px;
+border-radius: var(--radius-md);
+border: none;
+background: linear-gradient(135deg, var(--accent), var(--gold));
+color: #fff;
+font-family: 'Inter', sans-serif;
+font-weight: 700;
+font-size: 13px;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 6px;
+transition: transform .2s;
+}
+.fullscreen-download-btn:hover { transform: scale(1.04); }
 
 /* ── Install Modal ── */
 .install-modal-overlay {
@@ -1322,6 +1823,10 @@ transform: translateY(-1px);
 <i class="fa-solid fa-image"></i>
 <span>Biblioth&egrave;que de photos</span>
 </div>
+<div class="attach-popup-item" id="imageGenBtn" style="color:#8B5CF6;">
+<i class="fa-solid fa-wand-magic-sparkles" style="color:#8B5CF6;"></i>
+<span>G&eacute;n&eacute;rer une image (IA)</span>
+</div>
 </div>
 <textarea id="messageInput" placeholder="Posez votre question..." rows="1" autocomplete="off"></textarea>
 <button class="send-btn" id="sendBtn" onclick="sendMessage()">
@@ -1347,6 +1852,38 @@ transform: translateY(-1px);
 </div>
 </div>
 
+<!-- Image Generation Modal -->
+<div class="imggen-modal-overlay" id="imggenModalOverlay">
+<div class="imggen-modal">
+<div class="imggen-modal-header">
+<div class="imggen-modal-icon">
+<i class="fa-solid fa-wand-magic-sparkles"></i>
+</div>
+<div>
+<h3>G&eacute;n&eacute;rer une image</h3>
+<p>Nano Banana</p>
+</div>
+</div>
+<textarea class="imggen-textarea" id="imggenPrompt" placeholder="D&eacute;crivez l'image que vous souhaitez g&eacute;n&eacute;rer..."></textarea>
+<div class="imggen-actions">
+<button class="imggen-cancel-btn" id="imggenCancelBtn">Annuler</button>
+<button class="imggen-generate-btn" id="imggenGenerateBtn">
+<span class="imggen-spinner" id="imggenSpinner"></span>
+<i class="fa-solid fa-sparkles" id="imggenBtnIcon"></i>
+<span id="imggenBtnText">G&eacute;n&eacute;rer</span>
+</button>
+</div>
+</div>
+</div>
+
+<!-- Fullscreen Image Viewer -->
+<div class="fullscreen-img-overlay" id="fullscreenImgOverlay">
+<img id="fullscreenImg" src="" alt="Image">
+<button class="fullscreen-download-btn" id="fullscreenDownloadBtn">
+<i class="fa-solid fa-download"></i> T&eacute;l&eacute;charger
+</button>
+</div>
+
 {% endif %}
 <script>
   // === Intro Splash Screen ===
@@ -1364,13 +1901,24 @@ transform: translateY(-1px);
       if (introOverlay) introOverlay.classList.add('hidden');
     }
 
-    // Always show intro on every app open
-    showIntro();
+    // Check if we're loading a session - if so, don't show intro
+    var urlParams = new URLSearchParams(window.location.search);
+    var sessionParam = urlParams.get('session');
+    var skipWelcomeParam = urlParams.get('skipWelcome');
+    
+    if (sessionParam || skipWelcomeParam === '1') {
+        // We're loading a session or continuing conversation - hide intro
+        hideIntro();
+    } else {
+        // First load of the page - show intro
+        showIntro();
+    }
 
     // Start button listener: hide intro and reveal home screen only when CTA pressed
     if (startBtn) {
       startBtn.addEventListener('click', function() {
         hideIntro();
+        localStorage.setItem('firstVisit', 'true');
         try {
           var welcome = document.getElementById('welcomeScreen');
           if (welcome) {
@@ -1445,6 +1993,53 @@ var installBanner = document.getElementById('installBanner');
 var installBtn = document.getElementById('installBtn');
 var installClose = document.getElementById('installClose');
 
+// Detect device and OS
+function getDeviceInfo() {
+var ua = navigator.userAgent;
+var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+var isAndroid = /Android/.test(ua);
+var isWindows = /Win/.test(ua);
+var isMac = /Mac/.test(ua);
+var isFirefox = /Firefox/.test(ua);
+var isChrome = /Chrome/.test(ua);
+var isEdge = /Edg/.test(ua);
+var isSafari = /Safari/.test(ua) && !isChrome;
+
+return {
+isIOS: isIOS,
+isAndroid: isAndroid,
+isWindows: isWindows,
+isMac: isMac,
+isMobile: isIOS || isAndroid,
+isFirefox: isFirefox,
+isChrome: isChrome,
+isEdge: isEdge,
+isSafari: isSafari
+};
+}
+
+// Update manual steps based on device
+function updateInstallInstructions() {
+var device = getDeviceInfo();
+var stepsHTML = '';
+
+if (device.isIOS) {
+stepsHTML = '<div class="step"><span class="step-num">1</span><span>Appuyez sur le bouton <strong>Partager</strong> (carré avec flèche)</span></div>' +
+'<div class="step"><span class="step-num">2</span><span>Faites défiler et tapez sur <strong>Sur l\'écran d\'accueil</strong></span></div>' +
+'<div class="step"><span class="step-num">3</span><span>Tapez <strong>Ajouter</strong> en haut à droite</span></div>';
+} else if (device.isAndroid && !deferredPrompt) {
+stepsHTML = '<div class="step"><span class="step-num">1</span><span>Appuyez sur le menu <strong>⋮</strong> (3 points) en haut à droite</span></div>' +
+'<div class="step"><span class="step-num">2</span><span>Appuyez sur <strong>« Installer l\'application »</strong></span></div>' +
+'<div class="step"><span class="step-num">3</span><span>Confirmez en appuyant sur <strong>Installer</strong></span></div>';
+} else if (device.isWindows || device.isMac || device.isLinux) {
+stepsHTML = '<div class="step"><span class="step-num">1</span><span>Cliquez sur le menu <strong>⋮</strong> (3 points) en haut à droite</span></div>' +
+'<div class="step"><span class="step-num">2</span><span>Cliquez sur <strong>« Installer Nafti AI »</strong></span></div>' +
+'<div class="step"><span class="step-num">3</span><span>Confirmez l\'installation</span></div>';
+}
+
+if (manualSteps) manualSteps.innerHTML = stepsHTML;
+}
+
 if (isInstalled && headerInstallBtn) headerInstallBtn.classList.add('hidden');
 
 window.addEventListener('beforeinstallprompt', function(e) {
@@ -1452,6 +2047,7 @@ e.preventDefault();
 deferredPrompt = e;
 if (autoInstallBtn) autoInstallBtn.style.display = 'block';
 if (manualSteps) manualSteps.style.display = 'none';
+updateInstallInstructions();
 if (installBanner) {
 try {
 if (!localStorage.getItem('nafti-install-dismissed')) installBanner.style.display = 'block';
@@ -1459,21 +2055,31 @@ if (!localStorage.getItem('nafti-install-dismissed')) installBanner.style.displa
 }
 });
 
+// Auto-trigger installation on first click
+var installAutoTriggered = false;
+
 function triggerInstall() {
-if (deferredPrompt) {
+var device = getDeviceInfo();
+
+if (deferredPrompt && !installAutoTriggered) {
+// Android/Chrome/Edge/Firefox with deferredPrompt - trigger automatically
+installAutoTriggered = true;
 deferredPrompt.prompt();
 deferredPrompt.userChoice.then(function(result) {
 if (result.outcome === 'accepted' && headerInstallBtn) headerInstallBtn.classList.add('hidden');
 deferredPrompt = null;
 if (installBanner) installBanner.style.display = 'none';
 if (installModalOverlay) installModalOverlay.classList.remove('active');
+installAutoTriggered = false;
 });
+} else {
+// No deferredPrompt or already triggered once - show manual instructions
+updateInstallInstructions();
+if (installModalOverlay) installModalOverlay.classList.add('active');
 }
 }
 
-if (headerInstallBtn) headerInstallBtn.addEventListener('click', function() {
-if (installModalOverlay) installModalOverlay.classList.add('active');
-});
+if (headerInstallBtn) headerInstallBtn.addEventListener('click', triggerInstall);
 if (autoInstallBtn) autoInstallBtn.addEventListener('click', triggerInstall);
 if (closeModalBtn) closeModalBtn.addEventListener('click', function() {
 if (installModalOverlay) installModalOverlay.classList.remove('active');
@@ -1576,6 +2182,7 @@ var welcomeScreen = document.getElementById('welcomeScreen');
 window.isGenerating = false;
 window.conversationHistory = [];
 window.currentSessionId = null;
+window.lastFailedPrompt = null;
 
 var currentAIBubble = null;
 var AI_ENDPOINT = '/api/ai';
@@ -1791,8 +2398,28 @@ return bubble;
 function showError(bubble, errorText) {
 bubble.classList.add('error-bubble');
 bubble.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + errorText;
+addRetryButton(bubble);
 scrollToBottom();
 }
+
+function addRetryButton(bubble) {
+if (!window.lastFailedPrompt) return;
+var btn = document.createElement('button');
+btn.className = 'retry-btn';
+btn.innerHTML = '<i class="fa-solid fa-redo"></i> Réessayer';
+btn.onclick = function() { retryLastPrompt(); };
+var br = document.createElement('br');
+bubble.appendChild(br);
+bubble.appendChild(btn);
+}
+
+window.retryLastPrompt = function() {
+if (!window.lastFailedPrompt) return;
+var prompt = window.lastFailedPrompt;
+messageInput.value = prompt;
+messageInput.style.height = 'auto';
+sendMessage();
+};
 
 function finishGeneration() {
 window.isGenerating = false;
@@ -1801,7 +2428,7 @@ sendBtn.disabled = false;
 messageInput.focus();
 }
 
-async function sendMessage() {
+async function sendMessage(createNewSession = !window.currentSessionId) {
 var text = messageInput.value.trim();
 var attachments = window.pendingAttachments.slice();
 if ((!text && attachments.length === 0) || window.isGenerating) return;
@@ -1819,22 +2446,142 @@ messageInput.style.height = 'auto';
 window.pendingAttachments = [];
 if (window._renderAttachPreviews) window._renderAttachPreviews();
 
-if (!window.currentSessionId) {
-try {
-var sessResp = await fetch('/session/new', { method: 'POST' });
-var sessData = await sessResp.json();
-window.currentSessionId = sessData.id;
-} catch (e) { console.error('Failed to create session', e); }
+// Check if this is an image generation request - use more specific keywords
+var imageKeywords = ['génère', 'générer', 'dessine', 'dessine-moi', 'dessine une', 'dessine un', 'imagine-moi', 'imagine une', 'imagine un', 'peindre', 'fais une image', 'fais un dessin', 'génère une', 'génère un', 'générer une', 'générer un'];
+var isImageRequest = text.startsWith('🎨') || imageKeywords.some(function(keyword) { return text.toLowerCase().includes(keyword); });
+
+if (isImageRequest) {
+    // Get image prompt
+    var prompt = text.startsWith('🎨') ? text.substring(1).trim() : text;
+    if (!prompt) return;
+    
+    // If no session exists, create one first
+    if (!window.currentSessionId) {
+        try {
+            // Save prompt to sessionStorage before redirecting
+            sessionStorage.setItem('pendingImagePrompt', prompt);
+            
+            var sessResp = await fetch('/session/new', { method: 'POST' });
+            var sessData = await sessResp.json();
+            window.currentSessionId = sessData.id;
+            window.location.href = '/?session=' + window.currentSessionId;
+            return;
+        } catch (e) { 
+            console.error('Failed to create session', e); 
+            return;
+        }
+    }
+    
+    // Generate image directly in current session
+    var prompt = text.startsWith('🎨') ? text.substring(1).trim() : text;
+    if (!prompt) return;
+    
+    // Store prompt for retry button
+    window.lastFailedPrompt = prompt;
+    
+    // Add user prompt to conversation history
+    window.conversationHistory.push({ role: 'user', content: prompt });
+    
+    hideWelcome();
+    var aiBubble = addAIMessage();
+    
+    try {
+        var res = await fetch('/api/generate-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
+        });
+        var data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        var imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
+
+        var sourceLabel;
+        switch (data.source) {
+            case 'local':
+                sourceLabel = 'Nano Banana';
+                break;
+            case 'replicate':
+                sourceLabel = 'Replicate (SDXL / stable)';
+                break;
+            case 'huggingface':
+                sourceLabel = 'HuggingFace router';
+                break;
+            case 'pollinations':
+                sourceLabel = 'Pollinations.ai (fallback gratuit)';
+                break;
+            case 'gemini':
+            default:
+                sourceLabel = 'Gemini 2.5 Flash Image';
+        }
+        var html = '';
+        if (data.text) html += parseMarkdown(data.text);
+        html += '<img class="ai-generated-img" src="' + imgSrc + '" alt="Image générée" onclick="window._openFullscreen(this.src)">';
+        html += '<div style="margin-top:8px;font-size:11px;color:var(--text-muted);">🎨 Généré par ' + sourceLabel + '</div>';
+        aiBubble.innerHTML = html;
+        addRetryButton(aiBubble);
+        
+        // Add image response to conversation history
+        window.conversationHistory.push({ role: 'assistant', content: '🎨 Image générée: ' + prompt });
+        
+        // Save the conversation to the server
+        try {
+            var saveRes = await fetch('/api/save-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    messages: window.conversationHistory,
+                    session_id: window.currentSessionId
+                })
+            });
+            if (!saveRes.ok) console.error('Failed to save conversation');
+        } catch (saveErr) { 
+            console.error('Error saving conversation:', saveErr); 
+        }
+        
+        scrollToBottom();
+    } catch (err) {
+        // Remove the user message from history if there was an error
+        window.conversationHistory.pop();
+        showError(aiBubble, err.message || 'Erreur lors de la génération de l\'image.');
+    }
+    finishGeneration();
+    messageInput.focus();
+    return;
 }
+
+if (createNewSession) {
+    // Always create a new session for each message
+    try {
+    var sessResp = await fetch('/session/new', { method: 'POST' });
+    var sessData = await sessResp.json();
+    var newSessionId = sessData.id;
+
+    // Store the message to send after redirect
+    sessionStorage.setItem('pendingMessage', text);
+    if (attachments.length > 0) {
+        sessionStorage.setItem('pendingAttachments', JSON.stringify(attachments));
+    }
+
+    // Redirect to new session
+    window.location.href = '/?session=' + newSessionId;
+    return; // Exit here, the page will reload
+    } catch (e) { console.error('Failed to create session', e); }
+}
+
+// Send message normally in current session
 var userContent = text || '';
 if (imagesBase64 && !userContent) userContent = imagesBase64.length > 1 ? 'Analyse ces images.' : 'Analyse cette image.';
 window.conversationHistory.push({ role: 'user', content: userContent });
 var messages = [SYSTEM_MESSAGE].concat(window.conversationHistory);
 currentAIBubble = addAIMessage();
+// Store prompt for retry button
+window.lastFailedPrompt = text || (imagesBase64 ? '[Images analysées]' : '');
 try {
 var aiText = await callAI(messages, imagesBase64);
 if (currentAIBubble) {
 currentAIBubble.innerHTML = parseMarkdown(aiText);
+addRetryButton(currentAIBubble);
 window.conversationHistory.push({ role: 'assistant', content: aiText });
 }
 finishGeneration();
@@ -1848,6 +2595,142 @@ finishGeneration();
 }
 
 window.sendMessage = sendMessage;
+
+// === Image Generation (Nano Banana / Gemini) ===
+(function() {
+var imggenModalOverlay = document.getElementById('imggenModalOverlay');
+var imggenPrompt = document.getElementById('imggenPrompt');
+var imggenGenerateBtn = document.getElementById('imggenGenerateBtn');
+var imggenCancelBtn = document.getElementById('imggenCancelBtn');
+var imggenSpinner = document.getElementById('imggenSpinner');
+var imggenBtnIcon = document.getElementById('imggenBtnIcon');
+var imggenBtnText = document.getElementById('imggenBtnText');
+var imageGenBtn = document.getElementById('imageGenBtn');
+var attachPopup = document.getElementById('attachPopup');
+var fullscreenImgOverlay = document.getElementById('fullscreenImgOverlay');
+var fullscreenImg = document.getElementById('fullscreenImg');
+var fullscreenDownloadBtn = document.getElementById('fullscreenDownloadBtn');
+var currentFullscreenSrc = '';
+
+if (imageGenBtn) {
+imageGenBtn.addEventListener('click', function() {
+if (attachPopup) attachPopup.classList.remove('active');
+if (imggenModalOverlay) imggenModalOverlay.classList.add('active');
+if (imggenPrompt) { imggenPrompt.value = ''; imggenPrompt.focus(); }
+});
+}
+
+if (imggenCancelBtn) {
+imggenCancelBtn.addEventListener('click', function() {
+if (imggenModalOverlay) imggenModalOverlay.classList.remove('active');
+});
+}
+
+if (imggenModalOverlay) {
+imggenModalOverlay.addEventListener('click', function(e) {
+if (e.target === imggenModalOverlay) imggenModalOverlay.classList.remove('active');
+});
+}
+
+function setImggenLoading(loading) {
+if (loading) {
+imggenGenerateBtn.disabled = true;
+imggenSpinner.style.display = 'block';
+imggenBtnIcon.style.display = 'none';
+imggenBtnText.textContent = 'G\u00e9n\u00e9ration...';
+} else {
+imggenGenerateBtn.disabled = false;
+imggenSpinner.style.display = 'none';
+imggenBtnIcon.style.display = '';
+imggenBtnText.textContent = 'G\u00e9n\u00e9rer';
+}
+}
+
+if (imggenGenerateBtn) {
+imggenGenerateBtn.addEventListener('click', async function() {
+var prompt = imggenPrompt.value.trim();
+if (!prompt) return;
+setImggenLoading(true);
+imggenModalOverlay.classList.remove('active');
+hideWelcome();
+
+// Show user message with prompt
+addUserMessage('\ud83c\udfa8 ' + prompt);
+
+// Show AI thinking bubble
+var aiBubble = addAIMessage();
+
+try {
+var res = await fetch('/api/generate-image', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ prompt: prompt })
+});
+var data = await res.json();
+if (data.error) throw new Error(data.error);
+
+var imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
+
+var sourceLabel;
+switch (data.source) {
+    case 'local':
+        sourceLabel = 'Nano Banana';
+        break;
+    case 'replicate':
+        sourceLabel = 'Replicate (SDXL / stable)';
+        break;
+    case 'huggingface':
+        sourceLabel = 'HuggingFace router';
+        break;
+    case 'pollinations':
+        sourceLabel = 'Pollinations.ai (fallback gratuit)';
+        break;
+    case 'gemini':
+    default:
+        sourceLabel = 'Gemini 2.5 Flash Image';
+}
+var html = '';
+if (data.text) html += parseMarkdown(data.text);
+html += '<img class="ai-generated-img" src="' + imgSrc + '" alt="Image g\u00e9n\u00e9r\u00e9e" onclick="window._openFullscreen(this.src)">';
+html += '<div style="margin-top:8px;font-size:11px;color:var(--text-muted);">\ud83c\udfa8 G\u00e9n\u00e9r\u00e9 par ' + sourceLabel + '</div>';
+aiBubble.innerHTML = html;
+scrollToBottom();
+} catch (err) {
+showError(aiBubble, err.message || 'Erreur lors de la g\u00e9n\u00e9ration de l\'image.');
+}
+setImggenLoading(false);
+messageInput.focus();
+});
+}
+
+// Fullscreen image viewer
+window._openFullscreen = function(src) {
+currentFullscreenSrc = src;
+if (fullscreenImg) fullscreenImg.src = src;
+if (fullscreenImgOverlay) fullscreenImgOverlay.classList.add('active');
+};
+
+if (fullscreenImgOverlay) {
+fullscreenImgOverlay.addEventListener('click', function(e) {
+if (e.target === fullscreenImgOverlay || e.target === fullscreenImg) {
+fullscreenImgOverlay.classList.remove('active');
+}
+});
+}
+
+if (fullscreenDownloadBtn) {
+fullscreenDownloadBtn.addEventListener('click', function(e) {
+e.stopPropagation();
+if (!currentFullscreenSrc) return;
+var a = document.createElement('a');
+a.href = currentFullscreenSrc;
+a.download = 'nafti-ai-image-' + Date.now() + '.png';
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+});
+}
+})();
 
 // History button
 var historyBtn = document.getElementById('historyBtn');
@@ -1868,24 +2751,121 @@ window.location.href = '/settings';
 // Load session from URL params
 var urlParams = new URLSearchParams(window.location.search);
 var sessionParam = urlParams.get('session');
+var skipWelcomeParam = urlParams.get('skipWelcome');
 if (sessionParam) {
+// always clear the URL parameter first, we'll restore if needed
+history.replaceState({}, '', window.location.pathname + (skipWelcomeParam ? '?skipWelcome=1' : ''));
 window.currentSessionId = sessionParam;
 fetch('/api/session/' + sessionParam)
 .then(function(r) { return r.json(); })
 .then(function(data) {
-if (data.messages && data.messages.length > 0) {
-hideWelcome();
-data.messages.forEach(function(m) {
-if (m.role === 'user') {
-addUserMessage(m.content);
-} else if (m.role === 'assistant') {
-var bubble = addAIMessage();
-bubble.innerHTML = parseMarkdown(m.content);
-}
-window.conversationHistory.push(m);
-});
-scrollToBottom();
-}
+    // if there are messages or we have pending work, load the session
+    var pendingMessage = sessionStorage.getItem('pendingMessage');
+    var pendingImagePrompt = sessionStorage.getItem('pendingImagePrompt');
+    var hasPending = !!pendingMessage || !!pendingImagePrompt;
+    if (skipWelcomeParam === '1') {
+        hasPending = true; // treat as needing flow
+    }
+    if ((data.messages && data.messages.length > 0) || hasPending) {
+        // we're loading a conversation, make sure welcome is hidden
+        var welcome = document.getElementById('welcomeScreen');
+        if (welcome) welcome.style.display = 'none';
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(function(m) {
+                if (m.role === 'user') {
+                    addUserMessage(m.content);
+                } else if (m.role === 'assistant') {
+                    var bubble = addAIMessage();
+                    bubble.innerHTML = parseMarkdown(m.content);
+                }
+                window.conversationHistory.push(m);
+            });
+        }
+        // if there was a pending image prompt (redirect from image generation)
+        if (pendingImagePrompt) {
+            sessionStorage.removeItem('pendingImagePrompt');
+            // Trigger image generation with the pending prompt
+            (async function() {
+                window.conversationHistory.push({ role: 'user', content: pendingImagePrompt });
+                var aiBubble = addAIMessage();
+                try {
+                    var res = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: pendingImagePrompt })
+                    });
+                    var data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    
+                    var imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
+                    var sourceLabel;
+                    switch (data.source) {
+                        case 'local':
+                            sourceLabel = 'Nano Banana';
+                            break;
+                        case 'replicate':
+                            sourceLabel = 'Replicate (SDXL / stable)';
+                            break;
+                        case 'huggingface':
+                            sourceLabel = 'HuggingFace router';
+                            break;
+                        case 'pollinations':
+                            sourceLabel = 'Pollinations.ai (fallback gratuit)';
+                            break;
+                        case 'gemini':
+                        default:
+                            sourceLabel = 'Gemini 2.5 Flash Image';
+                    }
+                    var html = '';
+                    if (data.text) html += parseMarkdown(data.text);
+                    html += '<img class="ai-generated-img" src="' + imgSrc + '" alt="Image générée" onclick="window._openFullscreen(this.src)">';
+                    html += '<div style="margin-top:8px;font-size:11px;color:var(--text-muted);">🎨 Généré par ' + sourceLabel + '</div>';
+                    aiBubble.innerHTML = html;
+                    
+                    window.conversationHistory.push({ role: 'assistant', content: '🎨 Image générée: ' + pendingImagePrompt });
+                    
+                    // Save to server
+                    try {
+                        await fetch('/api/save-session', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                messages: window.conversationHistory,
+                                session_id: window.currentSessionId
+                            })
+                        });
+                    } catch (err) { 
+                        console.error('Error saving conversation:', err); 
+                    }
+                } catch (err) {
+                    window.conversationHistory.pop();
+                    if (aiBubble) {
+                        aiBubble.classList.add('error-bubble');
+                        aiBubble.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + (err.message || 'Erreur lors de la génération de l\'image.');
+                    }
+                }
+                scrollToBottom();
+            })();
+        }
+        // if there was a pending message (redirect from new session)
+        else if (pendingMessage) {
+            sessionStorage.removeItem('pendingMessage');
+            var pendingAttachments = sessionStorage.getItem('pendingAttachments');
+            if (pendingAttachments) {
+                sessionStorage.removeItem('pendingAttachments');
+                window.pendingAttachments = JSON.parse(pendingAttachments);
+            }
+            messageInput.value = pendingMessage;
+            if (window.pendingAttachments.length > 0 && window._renderAttachPreviews) {
+                window._renderAttachPreviews();
+            }
+            sendMessage(false);
+        }
+        scrollToBottom();
+    } else {
+        // no messages and nothing pending: this shouldn't happen with our new logic
+        window.currentSessionId = null;
+    }
 })
 .catch(function(e) { console.error('Failed to load session', e); });
 }
