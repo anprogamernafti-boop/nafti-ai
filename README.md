@@ -83,4 +83,3 @@ La génération d’images locale avec Diffusers peut demander plusieurs gigaoct
 ## À propos
 
 Projet personnel d’Asser Nafti autour des assistants IA multimodaux, des API et de l’intégration de fonctions de vision et de génération.
-
