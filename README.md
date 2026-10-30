@@ -1,113 +1,86 @@
 # Nafti AI
 
-Nafti AI est une application web d’assistance par intelligence artificielle, construite avec Flask. Elle permet de discuter avec un assistant multilingue, de joindre des images pour les faire analyser, et de générer des images à partir d’une description.
+### Un assistant IA multimodal pour discuter, analyser des images et créer des visuels
 
-🌐 **Site public : [nafti-ai](https://assernafti-nafti-ai.hf.space/)**
+<p align="center">
+  <img src="static/icons/icon-512.png" alt="Icône de Nafti AI" width="150">
+</p>
+
+<p align="center">
+  <a href="https://assernafti-nafti-ai.hf.space/">Ouvrir Nafti AI</a> ·
+  <a href="https://github.com/anprogamernafti-boop/nafti-ai">Code source</a>
+</p>
+
+Nafti AI est une application web Flask qui réunit conversation avec un assistant, analyse d’images, génération d’images et fonctions vocales dans une interface adaptée aux écrans mobiles.
 
 ## Fonctionnalités
 
-- **Chat IA** : posez vos questions et poursuivez plusieurs conversations.
-- **Analyse d’images et de documents** : joignez une image à un message pour demander à l’assistant de l’expliquer ou de l’analyser.
-- **Génération d’images** : créez des images à partir de descriptions textuelles.
-- **Reconnaissance vocale** : dictez un message dans les langues proposées par l’interface.
-- **Lecture audio des réponses** : écoutez les réponses de l’assistant.
-- **Comptes et historique** : inscription, connexion, sessions de discussion et historique.
-- **Interface adaptable** : thème clair ou sombre et mise en page adaptée aux petits écrans.
+- Conversations avec l’assistant et historique.
+- Analyse d’images envoyées dans la conversation.
+- Génération d’images à partir d’une description.
+- Dictée par la reconnaissance vocale du navigateur et lecture audio des réponses.
+- Comptes utilisateur, paramètres et interface claire ou sombre.
 
-Les fonctions d’IA s’appuient sur des services configurés côté serveur. Leur disponibilité dépend des clés API et des modèles configurés.
-
-## Démarrage rapide
-
-### Prérequis
-
-- Python 3.10 ou plus récent, en 64 bits.
-- Une clé API Groq pour activer le chat et l’analyse d’images.
-- Facultatif : une clé Hugging Face pour la génération d’images via l’API.
-
-### Installation
-
-```bash
-git clone https://github.com/anprogamernafti-boop/nafti-ai.git
-cd nafti-ai
-python -m venv .venv
-```
-
-Activez l’environnement virtuel :
-
-```bash
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-
-# macOS / Linux
-source .venv/bin/activate
-```
-
-Installez les dépendances :
-
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-Créez un fichier `.env` à la racine du projet :
-
-```dotenv
-GROQ_API_KEY=votre_cle_groq
-# Facultatif : clé pour l’API Hugging Face de génération d’images
-HF_API_KEY=votre_cle_hugging_face
-# Facultatif : remplacez les modèles par défaut
-GROQ_MODEL=llama-3.3-70b-versatile
-GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-HF_IMAGE_MODEL=stabilityai/stable-diffusion-2-1
-# En production, définissez une longue valeur aléatoire
-SECRET_KEY=remplacez-moi-par-une-cle-aleatoire
-```
-
-Ne publiez jamais vos clés API ni votre fichier `.env`. Celui-ci est ignoré par Git.
-
-Lancez l’application :
-
-```bash
-python server.py
-```
-
-Ouvrez [http://localhost:5000](http://localhost:5000).
-
-## Utiliser l’application
-
-1. Créez un compte ou connectez-vous.
-2. Démarrez une conversation et envoyez votre question.
-3. Pour faire analyser une image, joignez-la à votre message.
-4. Utilisez la commande de génération d’image pour décrire l’image à créer.
-
-L’authentification Google est facultative et nécessite `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET`, ainsi que la configuration OAuth correspondante dans Google Cloud.
+La disponibilité des fonctions IA dépend des clés API, des modèles et des services configurés.
 
 ## Technologies
 
-- Python et Flask pour le serveur web et les routes API.
-- Groq pour les réponses conversationnelles et la vision, lorsque `GROQ_API_KEY` est configurée.
-- Hugging Face Inference API ou un pipeline Diffusers local pour la génération d’images.
-- gTTS pour la synthèse vocale.
-- HTML, CSS et JavaScript pour l’interface.
+| Domaine | Technologies |
+| --- | --- |
+| Serveur et API | Python, Flask, Flask-CORS |
+| Modèles conversationnels et vision | Groq API |
+| Génération d’images | Hugging Face Inference API ou pipeline Diffusers local |
+| Voix | gTTS et Web Speech API du navigateur |
+| Interface | HTML, CSS, JavaScript et templates Jinja |
+| Déploiement | Hébergeur Python ; notes Render dans le dépôt |
+
+Les comptes et l’historique sont conservés dans les fichiers JSON locaux users.json et history.json, ignorés par Git. Pour un déploiement public, il faut définir une stratégie de stockage et de protection adaptée aux données utilisateur.
+
+## Démarrage local
+
+Prérequis : Python 3.10 ou plus récent.
+
+    git clone https://github.com/anprogamernafti-boop/nafti-ai.git
+    cd nafti-ai
+    python -m venv .venv
+
+Active l’environnement virtuel :
+
+    # Windows PowerShell
+    .venv\Scripts\Activate.ps1
+
+    # macOS ou Linux
+    source .venv/bin/activate
+
+Installe les dépendances :
+
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+
+Crée un fichier .env à la racine du dépôt :
+
+    GROQ_API_KEY=ta_cle_groq
+    HF_API_KEY=ta_cle_hugging_face
+    SECRET_KEY=une_longue_cle_aleatoire
+    # Facultatif, pour activer la connexion Google :
+    GOOGLE_CLIENT_ID=
+    GOOGLE_CLIENT_SECRET=
+
+GROQ_API_KEY active les fonctions de chat et d’analyse d’image. HF_API_KEY sert à l’API de génération d’images ; le serveur peut aussi utiliser un pipeline Diffusers local. Ne publie jamais le fichier .env ni les clés API.
+
+Démarre le serveur :
+
+    python server.py
+
+Ouvre [http://localhost:5000](http://localhost:5000).
 
 ## Déploiement
 
-Le dépôt source est public sur [GitHub](https://github.com/anprogamernafti-boop/nafti-ai). Pour publier une instance web accessible au public, déployez l’application Flask sur un hébergeur compatible Python et configurez les variables d’environnement de la même manière que dans `.env`. Configurez également les URI de redirection OAuth si la connexion Google est activée.
+Le dépôt contient des notes de déploiement pour Render dans [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md). Configure les variables d’environnement dans l’hébergeur et une valeur SECRET_KEY propre à la production. L’authentification Google est facultative et requiert une configuration OAuth correspondante.
 
-Le dépôt inclut un [Dockerfile](Dockerfile) et des notes de déploiement pour Render dans [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md). La génération locale d’images peut nécessiter plusieurs gigaoctets de mémoire et un GPU pour de bonnes performances.
+La génération d’images locale avec Diffusers peut demander plusieurs gigaoctets de mémoire et bénéficie d’un GPU. La génération via API dépend des quotas et conditions du fournisseur.
 
-## Configuration
+## À propos
 
-| Variable | Requise | Rôle |
-| --- | --- | --- |
-| `GROQ_API_KEY` | Pour le chat et la vision | Clé API Groq |
-| `HF_API_KEY` | Non | Authentification facultative à Hugging Face Inference API |
-| `GROQ_MODEL` | Non | Modèle de chat (valeur par défaut définie par le serveur) |
-| `GROQ_VISION_MODEL` | Non | Modèle de vision (valeur par défaut définie par le serveur) |
-| `HF_IMAGE_MODEL` | Non | Modèle Hugging Face utilisé pour les images |
-| `SECRET_KEY` | À définir en production | Clé de signature des sessions Flask |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Non | Connexion OAuth Google |
+Projet personnel d’Asser Nafti autour des assistants IA multimodaux, des API et de l’intégration de fonctions de vision et de génération.
 
-## Licence
-
-Aucune licence de dépôt n’est actuellement indiquée. Les modèles et services externes utilisés par l’application restent soumis à leurs propres conditions et licences.
