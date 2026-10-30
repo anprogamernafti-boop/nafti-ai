@@ -2,6 +2,8 @@
 
 Nafti AI est une application web d’assistance par intelligence artificielle, construite avec Flask. Elle permet de discuter avec un assistant multilingue, de joindre des images pour les faire analyser, et de générer des images à partir d’une description.
 
+🌐 **Site public : [nafti-ai](https://assernafti-nafti-ai.hf.space/)**
+
 ## Fonctionnalités
 
 - **Chat IA** : posez vos questions et poursuivez plusieurs conversations.
