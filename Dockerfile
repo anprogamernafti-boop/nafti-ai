@@ -2,21 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 \
+    PORT=7860
 
-# Use minimal requirements for speed and reliability
+# Install only the web runtime. Local Torch/Diffusers inference remains optional;
+# Hugging Face Inference API is used when its key and model are configured.
 COPY requirements-min.txt ./
 RUN pip install --no-cache-dir -r requirements-min.txt
 
-COPY app_simple.py ./
+# The Flask application, templates, icons, and static assets are all required.
+COPY . .
 
-ENV PYTHONUNBUFFERED=1
-EXPOSE 5000
+EXPOSE 7860
 
-# Start gunicorn directly with minimal config
-# HF Spaces will restart container if health checks fail
-# Response must be fast (< 1 second)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--worker-class", "sync", "--timeout", "60", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-", "app_simple:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:7860", "--workers", "1", "--worker-class", "sync", "--timeout", "60", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-", "wsgi:app"]
