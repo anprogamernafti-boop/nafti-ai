@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nafti-ai-edge",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-09",
+  "workers_dev": true,
+  "observability": {
+    "issues": {
+      "enabled": true
+    }
+  },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": [
+      "/", "/app/", "/api/*", "/login", "/register", "/logout", "/session/*", "/sessions/*",
+      "/generate", "/share/*", "/health", "/healthz", "/auth/login", "/history",
+      "/settings", "/profile", "/gallery", "/generate-image", "/auth/google", "/auth/google/callback"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nafti-ai-state",
+      "database_id": "42b82831-1bd9-4edd-9a78-3c3c68fdfc5e"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "AI_IMAGE_MODEL": "@cf/black-forest-labs/flux-1-schnell",
+    "GROQ_MODEL": "openai/gpt-oss-120b",
+    "GROQ_VISION_MODEL": "qwen/qwen3.8-27b",
+    "GOOGLE_CLIENT_ID": "551344948732-haghkdpstc9pgbd2b2feq96oe1mb0lkt.apps.googleusercontent.com",
+    "GOOGLE_REDIRECT_URI": "https://nafti-ai-edge.asser-dev.workers.dev/auth/google/callback"
+  }
+}

@@ -1,5 +1,5 @@
 // Nafti AI - Service Worker with optimized caching strategy
-const CACHE_VERSION = 'nafti-v1';
+const CACHE_VERSION = 'nafti-v2';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 
@@ -59,9 +59,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip API calls (cache dynamically as needed)
+  // Never cache API responses: history, account data and signed-in state are private.
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
     return;
   }
 

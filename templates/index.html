@@ -2986,10 +2986,16 @@ if (isImageRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: prompt })
         });
-        var data = await res.json();
+        var data;
+        var imgSrc;
+        if ((res.headers.get('content-type') || '').toLowerCase().startsWith('image/')) {
+            data = { source: 'huggingface' };
+            imgSrc = URL.createObjectURL(await res.blob());
+        } else {
+            data = await res.json();
+            imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
+        }
         if (data.error) throw new Error(data.error);
-
-        var imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
 
         var sourceLabel;
         switch (data.source) {
@@ -3001,6 +3007,9 @@ if (isImageRequest) {
                 break;
             case 'huggingface':
                 sourceLabel = 'HuggingFace router';
+                break;
+            case 'cloudflare':
+                sourceLabel = 'Cloudflare Workers AI';
                 break;
             case 'pollinations':
                 sourceLabel = 'Pollinations.ai (fallback gratuit)';
@@ -3499,10 +3508,16 @@ method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ prompt: prompt })
 });
-var data = await res.json();
+var data;
+var imgSrc;
+if ((res.headers.get('content-type') || '').toLowerCase().startsWith('image/')) {
+    data = { source: 'huggingface' };
+    imgSrc = URL.createObjectURL(await res.blob());
+} else {
+    data = await res.json();
+    imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
+}
 if (data.error) throw new Error(data.error);
-
-var imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
 
 var sourceLabel;
 switch (data.source) {
@@ -3627,10 +3642,16 @@ fetch('/api/session/' + sessionParam)
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt: pendingImagePrompt })
                     });
-                    var data = await res.json();
+                    var data;
+                    var imgSrc;
+                    if ((res.headers.get('content-type') || '').toLowerCase().startsWith('image/')) {
+                        data = { source: 'huggingface' };
+                        imgSrc = URL.createObjectURL(await res.blob());
+                    } else {
+                        data = await res.json();
+                        imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
+                    }
                     if (data.error) throw new Error(data.error);
-                    
-                    var imgSrc = 'data:' + (data.mime_type || 'image/png') + ';base64,' + data.image_base64;
                     var sourceLabel;
                     switch (data.source) {
                         case 'local':
@@ -3641,6 +3662,9 @@ fetch('/api/session/' + sessionParam)
                             break;
                         case 'huggingface':
                             sourceLabel = 'HuggingFace router';
+                            break;
+                        case 'cloudflare':
+                            sourceLabel = 'Cloudflare Workers AI';
                             break;
                         case 'pollinations':
                             sourceLabel = 'Pollinations.ai (fallback gratuit)';

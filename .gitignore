@@ -1,5 +1,8 @@
 # Secrets - NE JAMAIS envoyer sur GitHub
 .env
+cloudflare/*oauth*.json
+cloudflare/*client-secret*.json
+cloudflare/.env*
 
 # Python
 __pycache__/
@@ -14,6 +17,7 @@ build/
 # Données utilisateurs
 history.json
 users.json
+shares.json
 
 # OS
 .DS_Store
@@ -30,3 +34,15 @@ render-cli/
 render-cli.zip
 .venv
 .venv_old
+cloudflare-public/
+cloudflare/public/
+cloudflare/server.py
+cloudflare/python_modules/
+cloudflare/pylock.toml
+.wrangler/
+.wrangler-logs/
+.uv-cache/
+.uv-python/
+.venv-workers/
+python_modules/
+pylock.toml

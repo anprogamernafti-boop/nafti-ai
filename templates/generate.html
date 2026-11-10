@@ -557,13 +557,20 @@ async function generate() {
             body: JSON.stringify({ prompt })
         });
 
-        const data = await response.json();
+        let data;
+        let imgSrc;
+        if ((response.headers.get('content-type') || '').toLowerCase().startsWith('image/')) {
+            data = { source: 'huggingface' };
+            imgSrc = URL.createObjectURL(await response.blob());
+        } else {
+            data = await response.json();
+            imgSrc = `data:${data.mime_type || 'image/png'};base64,${data.image_base64}`;
+        }
 
         if (!response.ok) {
             throw new Error(data.error || 'Erreur lors de la génération');
         }
 
-        const imgSrc = `data:${data.mime_type || 'image/png'};base64,${data.image_base64}`;
         document.getElementById('resultImage').src = imgSrc;
 
         const resultText = document.getElementById('resultText');

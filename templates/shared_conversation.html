@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>{{ conversation.title }} · Nafti AI</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; background: #f4f5f7; color: #202124; }
+    main { width: min(760px, calc(100% - 32px)); margin: 40px auto; }
+    h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); margin-bottom: 8px; }
+    .intro, footer { color: #68707c; }
+    article { margin: 16px 0; padding: 18px 20px; background: white; border: 1px solid #e4e7eb; border-radius: 16px; }
+    article.assistant { border-left: 4px solid #7c3aed; }
+    article.user { border-left: 4px solid #0a8f94; }
+    article h2 { margin: 0 0 10px; font-size: .9rem; }
+    article p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+    footer { margin-top: 28px; font-size: .9rem; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #101114; color: #f4f4f5; }
+      article { background: #1a1b20; border-color: #30323a; }
+      .intro, footer { color: #a1a1aa; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{{ conversation.title }}</h1>
+    <p class="intro">Conversation partagée depuis Nafti AI.</p>
+    {% for message in conversation.messages %}
+      <article class="{{ message.role }}">
+        <h2>{{ 'Vous' if message.role == 'user' else 'Nafti AI' }}</h2>
+        <p>{{ message.content }}</p>
+      </article>
+    {% endfor %}
+    <footer>Ce lien donne accès à cette copie de la conversation. Les images jointes ne sont pas publiées.</footer>
+  </main>
+</body>
+</html>

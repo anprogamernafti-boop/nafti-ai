@@ -1,10 +1,9 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory, redirect, url_for, render_template, flash, session
+from flask import Flask, request, jsonify, send_file, send_from_directory, redirect, url_for, render_template, flash, session, Response
 from flask_cors import CORS
-from dotenv import load_dotenv
-import requests
 import os
 import json
 import hashlib
+import secrets
 import uuid
 import base64
 import gc
@@ -12,8 +11,18 @@ import time
 import re
 from PIL import Image
 from io import BytesIO
-from langdetect import detect_langs, DetectorFactory
-DetectorFactory.seed = 0   # Résultats reproductibles
+IS_CLOUDFLARE_WORKER = os.getenv("CLOUDFLARE_WORKERS") == "1"
+if IS_CLOUDFLARE_WORKER:
+    import cloudflare_requests as requests
+else:
+    import requests
+
+try:
+    from langdetect import detect_langs, DetectorFactory
+    DetectorFactory.seed = 0   # Résultats reproductibles
+except ImportError:
+    detect_langs = None
+    DetectorFactory = None
 try:
     from textblob import TextBlob
 except:
@@ -24,34 +33,90 @@ os.environ.setdefault('OAUTHLIB_INSECURE_TRANSPORT', '1')
 from pathlib import Path
 from datetime import datetime
 from datetime import timedelta
-from flask_dance.contrib.google import make_google_blueprint, google
+try:
+    from flask_dance.contrib.google import make_google_blueprint, google
+except ImportError:
+    make_google_blueprint = None
+    google = None
 
-# Charger les variables d'environnement depuis .env
-load_dotenv()
+# Charger les variables d'environnement locales depuis .env
+try:
+    from dotenv import load_dotenv
+    if not IS_CLOUDFLARE_WORKER:
+        load_dotenv()
+except ImportError:
+    pass
 
 print("[STARTUP] Flask app initializing...")
-app = Flask(__name__, static_folder="static")
+app = Flask(__name__, static_folder=None)
 print("[STARTUP] Flask app created")
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'supersecret')
+_secret_key = os.getenv('SECRET_KEY')
+if IS_CLOUDFLARE_WORKER and not _secret_key:
+    raise RuntimeError("Configure le secret SECRET_KEY du Worker avant de servir l'application.")
+app.config['SECRET_KEY'] = _secret_key or 'supersecret'
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+if IS_CLOUDFLARE_WORKER:
+    app.config['SESSION_COOKIE_SECURE'] = True
 CORS(app)
 print("[STARTUP] CORS enabled")
+
+if IS_CLOUDFLARE_WORKER:
+    from cloudflare_runtime import CloudflareTemplateLoader, generate_image_with_workers_ai, read_state, serve_asset, write_state
+    app.jinja_loader = CloudflareTemplateLoader()
+
+@app.route("/static/<path:filename>", endpoint="static")
+def static_asset(filename):
+    if IS_CLOUDFLARE_WORKER:
+        return serve_asset(f"static/{filename}")
+    return send_from_directory("static", filename)
 
 # File-based user storage
 USERS_FILE = Path('users.json')
 
 # Chat history storage (supports multiple sessions per user)
 HISTORY_FILE = Path('history.json')
+SHARES_FILE = Path('shares.json')
 
 def load_history():
+    if IS_CLOUDFLARE_WORKER:
+        return read_state("history", {})
     if HISTORY_FILE.exists():
         with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
 
 def save_history(data):
+    if IS_CLOUDFLARE_WORKER:
+        write_state("history", data)
+        return
     with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f)
+
+def save_shared_conversation(share_id, snapshot):
+    if IS_CLOUDFLARE_WORKER:
+        from cloudflare_runtime import save_shared_conversation as save_d1_shared_conversation
+        save_d1_shared_conversation(share_id, snapshot)
+        return
+    try:
+        with open(SHARES_FILE, 'r', encoding='utf-8') as f:
+            shares = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        shares = {}
+    shares[share_id] = snapshot
+    with open(SHARES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(shares, f, ensure_ascii=False)
+
+def load_shared_conversation(share_id):
+    if IS_CLOUDFLARE_WORKER:
+        from cloudflare_runtime import load_shared_conversation as load_d1_shared_conversation
+        return load_d1_shared_conversation(share_id)
+    try:
+        with open(SHARES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f).get(share_id)
+    except (OSError, json.JSONDecodeError):
+        return None
 
 def _is_valid_session(entry):
     """Check if a history entry is a valid session object (has id, title, messages)."""
@@ -93,6 +158,8 @@ def delete_session(user, session_id):
 
 def load_users():
     """Load users from JSON file"""
+    if IS_CLOUDFLARE_WORKER:
+        return read_state("users", {})
     if USERS_FILE.exists():
         with open(USERS_FILE, 'r') as f:
             return json.load(f)
@@ -100,6 +167,9 @@ def load_users():
 
 def save_users(users):
     """Save users to JSON file"""
+    if IS_CLOUDFLARE_WORKER:
+        write_state("users", users)
+        return
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f)
 
@@ -268,17 +338,18 @@ def detect_language_ensemble(text):
     top_lang = None
     top_prob = 0.0
 
-    try:
-        candidates = detect_langs(stripped_text)
-        if candidates:
-            detected = candidates[0].lang.lower()
-            detected = "zh" if detected.startswith("zh") else detected.split("-")[0]
-            detected = alias.get(detected, detected)
-            if detected in supported:
-                top_lang = detected
-                top_prob = float(candidates[0].prob)
-    except Exception:
-        pass
+    if detect_langs is not None:
+        try:
+            candidates = detect_langs(stripped_text)
+            if candidates:
+                detected = candidates[0].lang.lower()
+                detected = "zh" if detected.startswith("zh") else detected.split("-")[0]
+                detected = alias.get(detected, detected)
+                if detected in supported:
+                    top_lang = detected
+                    top_prob = float(candidates[0].prob)
+        except Exception:
+            pass
 
     # ─── 4. HEURISTIQUES (utile pour prompts très courts ambigus) ──────────
     if word_count <= 6 or top_prob < 0.85:
@@ -1428,8 +1499,8 @@ def format_exercise_answer(text):
 
 # Configuration Groq (lue depuis .env)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # Configuration HF Inference API (image generation - no local model needed on HF Spaces)
@@ -1666,6 +1737,8 @@ def profile_view():
 @app.route('/generate-image')
 def generate_image():
     """Render the image generation page"""
+    if IS_CLOUDFLARE_WORKER and not session.get('user'):
+        return redirect(url_for('index'))
     return render_template('generate.html')
 
 @app.route('/register', methods=['POST'])
@@ -1805,6 +1878,8 @@ def google_callback():
 @app.route("/service-worker.js")
 def service_worker():
     """Le service worker doit être servi depuis la racine pour couvrir tout le site"""
+    if IS_CLOUDFLARE_WORKER:
+        return serve_asset("static/service-worker.js", content_type="application/javascript")
     return send_from_directory("static", "service-worker.js", mimetype="application/javascript")
 
 
@@ -1872,6 +1947,8 @@ def chat_public():
 @app.route('/api/synthesize', methods=['POST'])
 def synthesize_voice():
     """Synthesize text to speech using gTTS"""
+    if IS_CLOUDFLARE_WORKER:
+        return jsonify({"error": "La synthèse serveur n'est pas disponible sur l'hébergement gratuit; utilisez la voix du navigateur."}), 501
     try:
         from gtts import gTTS
         
@@ -2071,11 +2148,28 @@ def proxy_ai():
 
 @app.route("/generate", methods=["POST"])
 def generate_public():
-    """Public endpoint for image generation (HF API or local)"""
-    data = request.get_json()
+    """Generate an image with Workers AI on Cloudflare or the local providers."""
+    data = request.get_json(silent=True) or {}
     prompt = data.get("prompt", "").strip()
     if not prompt:
         return jsonify({"error": "Veuillez fournir une description pour l'image."}), 400
+
+    if IS_CLOUDFLARE_WORKER:
+        if 'user' not in session:
+            return jsonify({"error": "Connectez-vous pour générer une image."}), 401
+        if len(prompt) > 1800:
+            return jsonify({"error": "La description est trop longue (1 800 caractères maximum)."}), 400
+        try:
+            image_base64 = generate_image_with_workers_ai(prompt)
+            return jsonify({
+                "image_base64": image_base64,
+                "mime_type": "image/jpeg",
+                "source": "cloudflare",
+                "text": f"Image générée : {prompt}"
+            })
+        except Exception as image_error:
+            print(f"Workers AI image generation failed: {type(image_error).__name__}")
+            return jsonify({"error": "Le service de génération d’images est momentanément indisponible."}), 503
 
     # Try HF API first
     try:
@@ -2089,6 +2183,8 @@ def generate_public():
         response = requests.post(url, headers=headers, json=payload, timeout=60)
         
         if response.status_code == 200:
+            if IS_CLOUDFLARE_WORKER and response.headers.get("content-type", "").startswith("image/"):
+                return Response(response.content, content_type=response.headers["content-type"])
             image_base64 = base64.b64encode(response.content).decode()
             return jsonify({
                 "image_base64": image_base64,
@@ -2097,6 +2193,9 @@ def generate_public():
             })
     except Exception as api_error:
         print(f"HF API error: {api_error}")
+
+    if IS_CLOUDFLARE_WORKER:
+        return jsonify({"error": "Le fournisseur d'images est temporairement indisponible."}), 503
 
     # Fall back to local
     try:
@@ -2133,14 +2232,29 @@ def generate_public():
 
 @app.route("/api/generate-image", methods=["POST"])
 def api_generate_image():
-    """Generate an image (uses HF API on HF Spaces, local model when available)"""
+    """Generate an image with Workers AI on Cloudflare, HF or local inference elsewhere."""
     if 'user' not in session:
         return jsonify({"error": "Login to use AI features"}), 401
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     prompt = data.get("prompt", "").strip()
     if not prompt:
         return jsonify({"error": "Veuillez fournir une description pour l'image."}), 400
+
+    if IS_CLOUDFLARE_WORKER:
+        if len(prompt) > 1800:
+            return jsonify({"error": "La description est trop longue (1 800 caractères maximum)."}), 400
+        try:
+            image_base64 = generate_image_with_workers_ai(prompt)
+            return jsonify({
+                "image_base64": image_base64,
+                "mime_type": "image/jpeg",
+                "source": "cloudflare",
+                "text": f"Image générée : {prompt}"
+            })
+        except Exception as image_error:
+            print(f"Workers AI image generation failed: {type(image_error).__name__}")
+            return jsonify({"error": "Le service de génération d’images est momentanément indisponible."}), 503
 
     # Try HF API first (works on HF Spaces with internet)
     try:
@@ -2156,6 +2270,8 @@ def api_generate_image():
         
         if response.status_code == 200:
             print(f"✅ HF API: Image generated successfully")
+            if IS_CLOUDFLARE_WORKER and response.headers.get("content-type", "").startswith("image/"):
+                return Response(response.content, content_type=response.headers["content-type"])
             image_base64 = base64.b64encode(response.content).decode()
             return jsonify({
                 "image_base64": image_base64,
@@ -2180,6 +2296,9 @@ def api_generate_image():
         print(f"🌐 HF API: No internet connection")
     except Exception as api_error:
         print(f"❌ HF API error: {type(api_error).__name__}: {api_error}")
+
+    if IS_CLOUDFLARE_WORKER:
+        return jsonify({"error": "Le fournisseur d'images est temporairement indisponible."}), 503
 
     # Fall back to local pipeline (for local development only)
     try:
@@ -2245,6 +2364,157 @@ def get_session_data(session_id):
     if not sess:
         return jsonify({"error": "Not found"}), 404
     return jsonify(sess)
+
+
+def _plain_message_content(content):
+    if isinstance(content, str):
+        return re.sub(r"data:image/[^;]+;base64,[A-Za-z0-9+/=]+", "[Image jointe]", content)
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                if item.get("type") == "text" and item.get("text"):
+                    parts.append(str(item["text"]))
+                elif item.get("type") in {"image_url", "input_image"} or item.get("image_url"):
+                    parts.append("[Image jointe]")
+        return "\n".join(parts)
+    return ""
+
+
+def _normalize_session_messages(messages):
+    if not isinstance(messages, list) or len(messages) > 2000:
+        return None
+    normalized = []
+    total_chars = 0
+    for message in messages:
+        if not isinstance(message, dict) or message.get("role") not in {"user", "assistant"}:
+            continue
+        content = _plain_message_content(message.get("content", ""))
+        total_chars += len(content)
+        if total_chars > 200_000:
+            return None
+        normalized.append({"role": message["role"], "content": content})
+    return normalized
+
+
+@app.route('/api/save-session', methods=['POST'])
+def save_session_route():
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Connectez-vous pour enregistrer la conversation."}), 401
+    data = request.get_json(silent=True) or {}
+    messages = _normalize_session_messages(data.get("messages"))
+    if messages is None:
+        return jsonify({"error": "La conversation est invalide ou trop volumineuse."}), 413
+
+    session_id = data.get("session_id")
+    sess = find_session(user, session_id) if isinstance(session_id, str) and session_id else None
+    if sess is None:
+        sess = create_session_for_user(user)
+    sess["messages"] = messages
+    if not sess.get("title") or sess.get("title") == "Nouvelle conversation":
+        for message in messages:
+            if message["role"] == "user":
+                sess["title"] = message["content"][:80] or "Nouvelle conversation"
+                break
+    histories = load_history()
+    user_sessions = histories.setdefault(user, [])
+    for index, stored in enumerate(user_sessions):
+        if stored.get("id") == sess["id"]:
+            user_sessions[index] = sess
+            break
+    else:
+        user_sessions.append(sess)
+    try:
+        save_history(histories)
+    except (RuntimeError, ValueError) as storage_error:
+        return jsonify({"error": str(storage_error)}), 507
+    return jsonify({"status": "saved", "session_id": sess["id"]})
+
+
+@app.route('/api/export', methods=['POST'])
+def export_conversation():
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Connectez-vous pour exporter la conversation."}), 401
+    data = request.get_json(silent=True) or {}
+    session_id = data.get("session_id")
+    sess = find_session(user, session_id) if isinstance(session_id, str) else None
+    if not sess:
+        return jsonify({"error": "Conversation introuvable."}), 404
+    export_format = str(data.get("format", "txt")).lower()
+    if export_format == "markdown":
+        export_format = "md"
+    if export_format not in {"txt", "md", "json"}:
+        return jsonify({"error": "Format accepté : txt, md ou json."}), 400
+
+    messages = _normalize_session_messages(sess.get("messages", [])) or []
+    title = str(sess.get("title") or "Conversation")[:160]
+    if export_format == "json":
+        body = json.dumps({"title": title, "messages": messages}, ensure_ascii=False, indent=2)
+        content_type = "application/json; charset=utf-8"
+    else:
+        heading = f"# {title}\n\n" if export_format == "md" else f"{title}\n{'=' * min(len(title), 80)}\n\n"
+        sections = []
+        for message in messages:
+            label = "Vous" if message["role"] == "user" else "Nafti AI"
+            if export_format == "md":
+                sections.append(f"**{label}**\n\n{message['content']}")
+            else:
+                sections.append(f"{label}\n{message['content']}")
+        separator = "\n\n---\n\n" if export_format == "md" else "\n\n"
+        body = heading + separator.join(sections)
+        content_type = "text/markdown; charset=utf-8" if export_format == "md" else "text/plain; charset=utf-8"
+    return Response(
+        body,
+        mimetype=content_type.split(";", 1)[0],
+        headers={
+            "Content-Disposition": f'attachment; filename="conversation.{export_format}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
+
+
+@app.route('/api/share', methods=['POST'])
+def create_conversation_share():
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Connectez-vous pour partager la conversation."}), 401
+    data = request.get_json(silent=True) or {}
+    session_id = data.get("session_id")
+    sess = find_session(user, session_id) if isinstance(session_id, str) else None
+    if not sess:
+        return jsonify({"error": "Conversation introuvable."}), 404
+    messages = _normalize_session_messages(sess.get("messages", []))
+    if not messages:
+        return jsonify({"error": "Cette conversation ne contient aucun message à partager."}), 400
+    share_id = secrets.token_urlsafe(24)
+    snapshot = {
+        "title": str(sess.get("title") or "Conversation")[:160],
+        "messages": messages,
+        "created_at": datetime.now().isoformat(),
+    }
+    try:
+        save_shared_conversation(share_id, snapshot)
+    except (RuntimeError, ValueError) as storage_error:
+        return jsonify({"error": str(storage_error)}), 507
+    return jsonify({"share_url": url_for("shared_conversation", share_id=share_id)})
+
+
+@app.route('/share/<share_id>')
+def shared_conversation(share_id):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{20,80}", share_id):
+        return "Lien de partage invalide.", 404
+    snapshot = load_shared_conversation(share_id)
+    if not snapshot:
+        return "Conversation introuvable.", 404
+    response = app.make_response(render_template("shared_conversation.html", conversation=snapshot))
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
 
 @app.route('/api/detect-language', methods=['POST'])
 def detect_language_endpoint():

@@ -1,0 +1,15 @@
+[project]
+name = "nafti-ai-cloudflare"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+  "flask>=3.0.0,<4.0",
+  "flask-cors>=4.0.0,<6.0",
+  "Pillow>=10.0.0,<13.0",
+]
+
+[dependency-groups]
+dev = [
+  "workers-py",
+  "workers-runtime-sdk",
+]
